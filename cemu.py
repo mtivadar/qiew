@@ -42,6 +42,17 @@ class ConsoleEmulator():
             self._y += 1
 
 
+    def newLine(self):
+        self.LF()
+        self.CR()
+
+    def LF(self):
+        if self._y < self._rows:
+            self._y += 1
+
+    def CR(self):
+        self._x = 0
+
     def _validatePosition(self, x, y):
         if x >= self._cols:
             raise Exception("x > cols")

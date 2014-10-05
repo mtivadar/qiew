@@ -16,6 +16,7 @@ class ViewMode(Observable):
 
     def __init__(self):
         super().__init__()
+        self.selector = None
 
     """
     Convert IBM437 character codes 0x00 - 0xFF into Unicode.
@@ -60,6 +61,7 @@ class ViewMode(Observable):
     def getPageOffset(self):
         NotImplementedError('method not implemented.')
 
+    # return cols, rows of the view
     def getGeometry(self):
         NotImplementedError('method not implemented.')
 
@@ -69,89 +71,29 @@ class ViewMode(Observable):
     def stopSelection(self):
         NotImplementedError('method not implemented.')        
 
-class ClassicSelection(object):
-    def __init__(self, viewMode):
-        self.viewMode = viewMode
-        self.selecting = False
-        self.Selections = []
-        self.MAX_SELECTIONS = 1
+    def draw(self, refresh=False):
+        NotImplementedError('method not implemented.')
 
-    def _makeSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0))):
-        dataModel = self.viewMode.getDataModel()
-        off = dataModel.getOffset()
-        length = len(dataModel.getDisplayablePage())
-        cols, rows = self.viewMode.getGeometry()
-
-        # return if out of view
-        if end < off:
-            return
-
-        if start > off + length:
-            return
-
-        if start < off:
-            d0 = 0
-        else:
-            d0 = start - off
-
-        if end > off + length:
-            d1 = length
-        else:
-            d1 = end - off
-        
-        mark = True
-        height = 14
-
-        qp.setOpacity(0.4)
-        while mark:
-            if d0/cols == d1/cols:
-                qp.fillRect((d0%cols)*8, (d0/cols)*height, (d1-d0)*8, 1*height, brush)
-                d0 += (d1 - d0)
-            else:    
-                qp.fillRect((d0%cols)*8, (d0/cols)*height, (cols - d0%cols)*8, 1*height, brush)
-                d0 += (cols - d0%cols)
-
-            if (d1 - d0 <= 0):
-                mark = False
-        qp.setOpacity(1)
-
-    def addSelection(self, t):
-        if len(self.Selections) >= self.MAX_SELECTIONS:
-            self.Selections = []
-
-        self.Selections.append(t)
-
-    def drawSelections(self, qp):
-        # draw already selected
-        for t in self.Selections:
-            start, end = t
-            self.viewMode.makeSelection(qp, start, end)
-
-        #draw current
-        if self.selecting:
-            self.viewMode.makeSelection(qp, *self.getCurrentSelection())
-
-    def startSelection(self):
-        if self.selecting == False:
-            self.selecting = True
-            self.selectionStartOffset = self.viewMode.getCursorAbsolutePosition()
-            if len(self.Selections) >= self.MAX_SELECTIONS:
-                self.Selections = []
-
-    def getCurrentSelection(self):
-        if self.selecting:
-            a = self.selectionStartOffset
-            b = self.viewMode.getCursorAbsolutePosition()
-            if a < b:
-                return a, b
-            else:
-                return b, a
-        else:
-            return None
+    # returns x,y cursor position in page
+    def getCursorOffsetInPage(self):
+        x, y = self.cursor.getPosition()
+        return y*self.COLUMNS + x
     
-    def stopSelection(self):
-        if self.selecting == True:
-            self.addSelection(self.getCurrentSelection())
+    def handleKeyPressEvent(self, modifier, key):
+        raise Exception("not implemented")
 
-            self.selecting = False
-            self.selectionStartOffset = None
+    def handleKeyReleaseEvent(self, modifier, key):
+        raise Exception("not implemented")
+
+    # get what's on the screen
+    # pageOffset - which page. None - current page
+    #
+    # return bytearray containing what it is dysplayed currently on the screen
+    def getDisplayablePage(self, pageOffset=None):
+        data = self.dataModel.getData()
+        dataOffset = self.dataModel.getOffset()
+        cols, rows = self.getGeometry()
+        if pageOffset:
+            return bytearray(data[dataOffset:dataOffset + rows*cols*pageOffset])
+
+        return bytearray(data[dataOffset:dataOffset + rows*cols])
