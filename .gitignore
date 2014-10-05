@@ -1,0 +1,6 @@
+*.pyc
+EXE/*
+first_proto/*
+notepad*
+*sublime*
+terminus*
