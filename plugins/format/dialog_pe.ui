@@ -1,0 +1,406 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Dialog</class>
+ <widget class="QDialog" name="Dialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>634</width>
+    <height>467</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QTabWidget" name="tabWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>611</width>
+     <height>450</height>
+    </rect>
+   </property>
+   <property name="currentIndex">
+    <number>0</number>
+   </property>
+   <widget class="QWidget" name="tab">
+    <attribute name="title">
+     <string>&amp;Header</string>
+    </attribute>
+    <widget class="QTreeWidget" name="treeWidgetHeader">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>781</width>
+       <height>420</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>781</width>
+       <height>420</height>
+      </size>
+     </property>
+     <column>
+      <property name="text">
+       <string>Header</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Type</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Value</string>
+      </property>
+     </column>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_7">
+    <attribute name="title">
+     <string>&amp;Sections</string>
+    </attribute>
+    <widget class="QTreeWidget" name="treeWidgetSections">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>601</width>
+       <height>420</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Terminus</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <column>
+      <property name="text">
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>FileOffset</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignRight|AlignVCenter</set>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>FileSize</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignRight|AlignVCenter</set>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>RVA</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignRight|AlignVCenter</set>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>MemSize</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignRight|AlignVCenter</set>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Characteristics</string>
+      </property>
+      <property name="textAlignment">
+       <set>AlignRight|AlignVCenter</set>
+      </property>
+     </column>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_3">
+    <attribute name="title">
+     <string>&amp;Directories</string>
+    </attribute>
+    <widget class="QTreeWidget" name="treeWidgetDirectories">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>601</width>
+       <height>420</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Terminus</family>
+       <pointsize>10</pointsize>
+      </font>
+     </property>
+     <column>
+      <property name="text">
+       <string>Directory</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Section</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Address</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Size</string>
+      </property>
+     </column>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_5">
+    <attribute name="title">
+     <string>&amp;Imports</string>
+    </attribute>
+    <widget class="QTreeWidget" name="treeWidgetImports">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>791</width>
+       <height>420</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Terminus</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <column>
+      <property name="text">
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>RVA</string>
+      </property>
+     </column>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_6">
+    <attribute name="title">
+     <string>&amp;Exports</string>
+    </attribute>
+   </widget>
+   <widget class="QWidget" name="tab_2">
+    <attribute name="title">
+     <string>&amp;VersionInfo</string>
+    </attribute>
+    <widget class="QTableWidget" name="tableWidget">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>10</y>
+       <width>351</width>
+       <height>211</height>
+      </rect>
+     </property>
+     <row>
+      <property name="text">
+       <string>Size</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>Overlay</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>Type</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>Machine</string>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>PDB File</string>
+      </property>
+     </row>
+     <column>
+      <property name="text">
+       <string>Value</string>
+      </property>
+     </column>
+     <item row="0" column="0">
+      <property name="text">
+       <string/>
+      </property>
+     </item>
+    </widget>
+    <widget class="QTableWidget" name="tableWidget_2">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>230</y>
+       <width>611</width>
+       <height>241</height>
+      </rect>
+     </property>
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>192</height>
+      </size>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <attribute name="horizontalHeaderVisible">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderHighlightSections">
+      <bool>false</bool>
+     </attribute>
+     <row>
+      <property name="text">
+       <string>CompanyName</string>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>FileDescription</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>FileVersion</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>CopyRight</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>OriginalFileName</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>ProductName</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <row>
+      <property name="text">
+       <string>ProductVersion</string>
+      </property>
+      <property name="font">
+       <font>
+        <family>Segoe UI</family>
+        <pointsize>8</pointsize>
+       </font>
+      </property>
+     </row>
+     <column>
+      <property name="text">
+       <string>Value</string>
+      </property>
+     </column>
+     <item row="0" column="0">
+      <property name="text">
+       <string/>
+      </property>
+      <property name="flags">
+       <set>ItemIsSelectable|ItemIsEditable|ItemIsDragEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+      </property>
+     </item>
+    </widget>
+   </widget>
+   <widget class="QWidget" name="tab_4">
+    <attribute name="title">
+     <string>&amp;Resources</string>
+    </attribute>
+   </widget>
+  </widget>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>treeWidgetHeader</tabstop>
+  <tabstop>tableWidget</tabstop>
+  <tabstop>tableWidget_2</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
