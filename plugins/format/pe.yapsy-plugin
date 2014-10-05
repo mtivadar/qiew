@@ -1,0 +1,9 @@
+[Core]
+Name = MZ-PE format file
+Module = pe
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = Plugin for PE files

@@ -1,0 +1,9 @@
+[Core]
+Name = binary
+Module = binary
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = binary file, unknown format
