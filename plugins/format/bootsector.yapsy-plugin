@@ -1,0 +1,9 @@
+[Core]
+Name = bootsector
+Module = bootsector
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = bootsector/mbr file
