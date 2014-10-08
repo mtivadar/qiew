@@ -60,17 +60,17 @@ class binWidget(QtGui.QWidget):
         for plugin in self.manager.getPluginsOfCategory("FileFormat"):
             # plugin.plugin_object is an instance of the plugin
             po = plugin.plugin_object
-            print po.name
             if po.recognize(self.dataModel):
                 print '[+] ' + po.name
                 Formats.append(po)
                 
 
-
+        # sort plugins by priority
         Formats = sorted(Formats, key=lambda x: x.priority, reverse=True)
         po = Formats[0]
+        print 'Choosed plugin: ' + po.name
 
-        print QtGui.QFontDatabase.addApplicationFont(os.path.join('terminus-ttf-4.39', 'TerminusTTF-4.39.ttf'))
+        #print QtGui.QFontDatabase.addApplicationFont(os.path.join('terminus-ttf-4.39', 'TerminusTTF-4.39.ttf'))
         
 
 
@@ -119,7 +119,7 @@ class binWidget(QtGui.QWidget):
 
 
     def scroll_from_outside(self, i):
-        print 'slot-signal ' + str(i)
+        #print 'slot-signal ' + str(i)
         #self.scroll_pdown = True
         self.update()
 
