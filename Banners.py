@@ -134,6 +134,7 @@ class FileAddrBanner(Banner):
         for i in range(rows):
             s = '{0:08x}'.format(offset)
             qp.drawText(0+5, (i+1) * self.fontHeight, s)
+            columns = self.viewMode.getColumnsbyRow(i)
             offset += columns
         
 
