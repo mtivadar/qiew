@@ -113,6 +113,15 @@ class DataModel(Observer):
         
         return s
 
+    def getChar(self, offset):
+        if offset < 0:
+            return None
+
+        if offset >= len(self.data):
+            return None
+
+        return self.data[offset]
+
     def getStream(self, start, end):
         return bytearray(self.data[start:end])
 
