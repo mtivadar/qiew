@@ -14,13 +14,33 @@ import distorm3
 
 
 class ASMLine:
-    def __init__(self, d):
+    def __init__(self, d, plugin):
         self._hexstr = self.hexlify(d.instructionBytes)
         self._instruction = str(d)
         self._size = d.size
         self._addr = d.address
         self._mnemonic = d.mnemonic
         self._d = d
+        self.refString = ''
+
+        if 'FLAG_RIP_RELATIVE' in d.flags:
+            if len(d.operands) > 1:
+                o = d.operands[1]
+                if o.dispSize != 0:
+                    x =  d.address + d.size + o.disp
+                    self.refString = plugin.stringFromVA(x)
+
+        elif d.mnemonic == 'PUSH':
+
+            o = d.operands[0]
+            if o.type == 'Immediate':
+                self.refString = plugin.stringFromVA(o.value)
+
+        else:
+            pass
+
+
+
 
     def hexlify(self, sb):
         hexstr = binascii.hexlify(sb)
@@ -54,6 +74,10 @@ class ASMLine:
             return ' '.join(self.instruction.split(' ')[1:])
         else:
             return ''
+
+    @property
+    def refString(self):
+        return self.refString
 
     @property
     def obj(self):
@@ -107,6 +131,7 @@ class DisasmViewMode(ViewMode):
         self.ASM_RE = delim = '|'.join(map(re.escape, self.ASMSeparators))
 
         self.DRAW_AREA = 0
+        self.selector = TextSelection.DisasmSelection(self)
 
     @property
     def fontWidth(self):
@@ -293,21 +318,23 @@ class DisasmViewMode(ViewMode):
             half = self.fontHeight/2
             for o in asm.obj.operands:
 
-                print 'operand ' + str(o)
-                print 'msize ' +  str(msize)
+                #print 'operand ' + str(o)
+                #print 'msize ' +  str(msize)
 
                 target = o.value
-                print 'target ' + str(hex(target))
+                #print 'target ' + str(hex(target))
 
                 screenVA = self._getVA(self.dataModel.getOffset())
-                if target >  screenVA and target < self._getVA(self.dataModel.getOffset()) + tsize:
+                if target >  screenVA and target < self._getVA(self.dataModel.getOffset()) + tsize - self.OPCODES[-1].size:
+                    # branch target is in screen
+
                     sz = 0
                     for i, t in enumerate(self.OPCODES):
                         sz += t.size
-                        if sz+self._getVA(self.dataModel.getOffset()) == target:
+                        if sz+self._getVA(self.dataModel.getOffset()) >= target:
                             break
 
-                    print self.OPCODES[i+1].instruction
+                    #print self.OPCODES[i+1].instruction
                     qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
 
                     
@@ -318,7 +345,7 @@ class DisasmViewMode(ViewMode):
                     tline = self.DRAW_AREA*' ' + tasm.hex + (30 - len(tasm.hex))*' ' + tasm.mnemonic + (10 - len(tasm.mnemonic))*' ' + tasm.restOfInstr
 
                     qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (i + 1)*self.fontHeight + half)
-                    print tline
+                    #print tline
                     qp.drawLine(-30, (i + 1)*self.fontHeight + half, -15, (i + 1)*self.fontHeight + half)
 
                     points = [QtCore.QPoint(-15, (i + 1)*self.fontHeight + half - 5), 
@@ -331,6 +358,7 @@ class DisasmViewMode(ViewMode):
 
 
                 elif target > screenVA:
+                    # branch is at greater address, out of screen
                     qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
 
                     qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
@@ -347,6 +375,7 @@ class DisasmViewMode(ViewMode):
 
                 else:
                     # upper arrow
+                    # branch is at lower address, out of screen
 
                     qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
 
@@ -446,8 +475,7 @@ class DisasmViewMode(ViewMode):
 
     def _getVA(self, offset):
         if self.plugin:
-            if self.plugin.name == 'pe':
-                return self.plugin.getVA(offset)
+            return self.plugin.hintDisasmVA(offset)
 
         return 0
 
@@ -458,7 +486,23 @@ class DisasmViewMode(ViewMode):
         DEC = distorm3.DecomposeGenerator(self._getVA(ofs), code, dt)
         g = 0
         for d in DEC:
-            newline = ASMLine(d)
+            newline = ASMLine(d, self.plugin)
+            if 'FLAG_RIP_RELATIVE' in newline.obj.flags:
+                #print dir(newline.obj)
+#                if newline.obj.dispSize:
+ #                   print str(newline.obj) + ' ' + str(newline.obj.flags)
+
+  #                  print newline.obj.address + newline.obj.size + newline.obj.disp
+
+                if len(newline.obj.operands) > 1:
+                    o = newline.obj.operands[1]
+                    if o.dispSize != 0:
+                        print newline.obj
+                        print hex(o.disp)
+                        x =  newline.obj.address + newline.obj.size + o.disp
+                        print self.plugin.stringFromVA(x)
+
+
             self.OPCODES.append(newline)
             g += 1
             if g == self.ROWS:
@@ -486,6 +530,12 @@ class DisasmViewMode(ViewMode):
 
         cemu.write(asm.restOfInstr)
 
+        if len(asm.refString) > 4:
+            cemu.write((30-len(asm.restOfInstr))*' ')
+
+            qp.setPen(QtGui.QPen(QtGui.QColor(82, 192, 192), 1, QtCore.Qt.SolidLine))
+            cemu.write('; ' + asm.refString)
+
 
     def drawTextMode(self, qp):
         # draw background
@@ -499,7 +549,7 @@ class DisasmViewMode(ViewMode):
 
         if len(self.OPCODES) == 0:
 
-            self._getOpcodes(self.dataModel.getOffset(), str(self.getDisplayablePage()), distorm3.Decode64Bits)
+            self._getOpcodes(self.dataModel.getOffset(), str(self.getDisplayablePage()), self.plugin.hintDisasm())
 
 
 
@@ -524,7 +574,7 @@ class DisasmViewMode(ViewMode):
 
         #TODO: getDisplayablePage() won't contain what we want to disasm. we will use dataModel
         #      in this view, getDisplayablePage will contain disasm text, because that is what is displayed
-        self._getOpcodes(offset, str(self.getDisplayablePage()), distorm3.Decode64Bits)
+        self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm())
 
         self.draw(refresh=True)
         if self.widget:
@@ -587,7 +637,7 @@ class DisasmViewMode(ViewMode):
                 if start == end:
                     return
 
-                iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), distorm3.Decode64Bits)
+                iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
                 # eat first instruction from the page
                 d = iterable[0]
                 #print str(hex(start)) + '  ' + str(hex(d.size))
@@ -604,12 +654,12 @@ class DisasmViewMode(ViewMode):
 
                 end = self.dataModel.getOffset()
                 #print 'end ' + str(hex(end))
-                iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), distorm3.Decode64Bits)
+                iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
 
                 d = iterable[-1]
 
             #hexstr = self.hexlify(self.dataModel.getStream(start + d.address, start + d.address + d.size))
-            newasm = ASMLine(d)
+            newasm = ASMLine(d, self.plugin)
 
             if dy < 0:
                 self.dataModel.slide(self.OPCODES[0].size)
