@@ -293,3 +293,60 @@ class HexSelection(Selection):
                 mark = False
         qp.setOpacity(1)
 
+
+class DisasmSelection(Selection):
+    def __init__(self, viewMode):
+        super(DisasmSelection, self).__init__(viewMode)
+        self.MAX_SELECTIONS = 1
+
+
+    def drawSelection(self, qp, start, end, brush=QtGui.QBrush(QtGui.QColor(125, 255, 0)), opacity=0.4):
+        dataModel = self.viewMode.getDataModel()
+        off = dataModel.getOffset()
+        length = sum([o.size for o in self.viewMode.OPCODES])        # TODO: not nice!
+        cols, rows = self.viewMode.getGeometry()
+
+        # return if out of view
+        if end < off:
+            return
+
+        if start > off + length:
+            return
+
+        if start < off:
+            d0 = 0
+        else:
+            d0 = start - off
+
+        if end > off + length:
+            d1 = length
+        else:
+            d1 = end - off
+        
+        mark = True
+        height = self.viewMode.fontHeight
+        width = self.viewMode.fontWidth
+
+        qp.setOpacity(opacity)
+
+        offset = 2
+
+        size = 0
+        for i, asm in enumerate(self.viewMode.OPCODES):
+            if size + asm.size > d0 and size <= d1:
+
+                    # compute x offset
+                    x = d0-size
+                    if size > d0:
+                        x = 0
+
+                    # compute width
+                    w = asm.size
+                    if size + asm.size > d1:
+                        w = d1 - size
+
+                    qp.fillRect(x*3*width, i*height + offset, (w-x)*3*width - width, 1*height, brush)
+
+            size += asm.size
+
+        qp.setOpacity(1)
