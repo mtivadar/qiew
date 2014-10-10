@@ -9,9 +9,12 @@ from PyQt4 import QtGui, QtCore
 from cemu import *
 import time
 
-class PE(FileFormat):
-#    def __init__(self):
-#        print 'hello'
+import distorm3
+
+class DisasmInterface():
+    pass
+
+class PE(FileFormat, DisasmInterface):
     name = 'pe'
     priority = 5
     def recognize(self, dataModel):
@@ -26,7 +29,7 @@ class PE(FileFormat):
 
 
     def getVA(self, offset):
-    	return self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase
+        return self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase
 
     def init(self, viewMode):
         self._viewMode = viewMode
@@ -53,9 +56,56 @@ class PE(FileFormat):
 
         self.viewMode.setTransformationEngine(self.textDecorator)
         
+    def hintDisasm(self):
+
+        if self.PE.FILE_HEADER.Machine & pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_AMD64'] == pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_AMD64']:
+            return distorm3.Decode64Bits
+
+        if self.PE.FILE_HEADER.Machine & pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_I386'] == pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_I386']:
+            return distorm3.Decode32Bits
+
+        return distorm3.Decode32Bits
+
+    def hintDisasmVA(self, offset):
+        return self.getVA(offset)
+
+    def stringFromVA(self, va):
+        try:
+           offset = self.PE.get_offset_from_rva(va - self.PE.OPTIONAL_HEADER.ImageBase)
+        except:
+            return ''
+
+        doit = True
+        s = ''
+        data = self.dataModel
+
+        import string
+        Special =  string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
+
+        while doit:
+            c = data.getChar(offset)
+            if not c:
+                break
+
+            if c in Special:
+                s += c
+                offset += 1
+
+                c1 = data.getChar(offset)
+                c2 = data.getChar(offset+1)
+                if not c1 or not c2:
+                    break
+
+                if c1 == '\0' and c2 in Special:
+                    offset += 1
+            else:
+                doit = False
+
+        return s
+
 
     def getBanners(self):
-    	return [PEBanner]
+        return [PEBanner]
    
     def writeData(self, w):
 
