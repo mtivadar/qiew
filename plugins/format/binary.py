@@ -23,6 +23,12 @@ class Binary(FileFormat):
 
         return False
 
+    def hintDisasm(self):
+        return distorm3.Decode32Bits
+
+    def hintDisasmVA(self, offset):
+        return offset
+
     def getBanners(self):
         return [Banners.FileAddrBanner]
    
