@@ -23,9 +23,11 @@ class ASMLine:
         self._d = d
         self.refString = ''
 
+        # gets ref string (only for PUSH and RIP addressing)
         if 'FLAG_RIP_RELATIVE' in d.flags:
             if len(d.operands) > 1:
                 o = d.operands[1]
+
                 if o.dispSize != 0:
                     x =  d.address + d.size + o.disp
                     self.refString = plugin.stringFromVA(x)
@@ -39,6 +41,26 @@ class ASMLine:
         else:
             pass
 
+
+        # get symbol
+        self.symbol = None
+        asm = d
+        value = None
+        if asm.flowControl != 'FC_NONE':
+            for o in asm.operands:
+                if o.dispSize != 0:
+                    if 'FLAG_RIP_RELATIVE' in asm.flags:
+                        value =  asm.address + asm.size + o.disp
+                    else:
+                        value = o.disp
+                else:
+                    value = o.value
+
+            if value:
+                sym = plugin.disasmSymbol(value)
+
+                if sym:
+                    self.symbol = sym
 
 
 
@@ -69,11 +91,13 @@ class ASMLine:
       
     @property
     def restOfInstr(self):
-        #TODO: should test if flag is CANNOT_DECODE instead. We check for 'DB 0xYY'
-        if ' ' not in self.mnemonic:
-            return ' '.join(self.instruction.split(' ')[1:])
-        else:
+        asm = self._d
+
+        if 'FLAG_NOT_DECODABLE' in asm.flags:
             return ''
+        else:
+            #return ', '.join([str(o) for o in asm.operands])
+            return ' '.join(self.instruction.split(' ')[1:])
 
     @property
     def refString(self):
@@ -126,11 +150,11 @@ class DisasmViewMode(ViewMode):
         self.Ops = []
         self.newPix = None
 
+        self.FlowHistory = []
         self.OPCODES = []
         self.ASMSeparators = ' ,.[]+-:'
         self.ASM_RE = delim = '|'.join(map(re.escape, self.ASMSeparators))
 
-        self.DRAW_AREA = 0
         self.selector = TextSelection.DisasmSelection(self)
 
     @property
@@ -204,17 +228,9 @@ class DisasmViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
 
         asm = self.OPCODES[cursorY]
-        line = self.DRAW_AREA*' ' + asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
+        line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
 
         x = cursorX
-        """
-        while x-1 > self.DRAW_AREA:
-            if x-1 < len(line):
-                if line[x-1] not in self.ASMSeparators:
-                    x -= 1
-                else:
-                    break
-        """
         xstart = x
 
         x = cursorX
@@ -241,7 +257,7 @@ class DisasmViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
 
         qasm = self.OPCODES[cursorY]
-        line = self.DRAW_AREA*' ' + qasm.hex + (30 - len(qasm.hex))*' ' + qasm.mnemonic + (10 - len(qasm.mnemonic))*' ' + qasm.restOfInstr
+        line = qasm.hex + (30 - len(qasm.hex))*' ' + qasm.mnemonic + (10 - len(qasm.mnemonic))*' ' + qasm.restOfInstr
 
         xstart = cursorX
 
@@ -305,9 +321,9 @@ class DisasmViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
 
         asm = self.OPCODES[cursorY]
-        line = self.DRAW_AREA*' ' + asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
+        line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
 
-        if asm.mnemonic in ['JZ', 'JB', 'JP', 'CALL', 'JMP', 'JNZ']:
+        if asm.obj.flowControl != 'FC_NONE':
             #print dir(asm.obj)
             #print asm.obj.flowControl
             #print asm.obj.dt
@@ -342,7 +358,7 @@ class DisasmViewMode(ViewMode):
                     qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
 
                     tasm = self.OPCODES[i+1]
-                    tline = self.DRAW_AREA*' ' + tasm.hex + (30 - len(tasm.hex))*' ' + tasm.mnemonic + (10 - len(tasm.mnemonic))*' ' + tasm.restOfInstr
+                    tline = tasm.hex + (30 - len(tasm.hex))*' ' + tasm.mnemonic + (10 - len(tasm.mnemonic))*' ' + tasm.restOfInstr
 
                     qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (i + 1)*self.fontHeight + half)
                     #print tline
@@ -482,27 +498,10 @@ class DisasmViewMode(ViewMode):
     def _getOpcodes(self, ofs, code, dt):
         
         self.OPCODES = []        
-
         DEC = distorm3.DecomposeGenerator(self._getVA(ofs), code, dt)
         g = 0
         for d in DEC:
             newline = ASMLine(d, self.plugin)
-            if 'FLAG_RIP_RELATIVE' in newline.obj.flags:
-                #print dir(newline.obj)
-#                if newline.obj.dispSize:
- #                   print str(newline.obj) + ' ' + str(newline.obj.flags)
-
-  #                  print newline.obj.address + newline.obj.size + newline.obj.disp
-
-                if len(newline.obj.operands) > 1:
-                    o = newline.obj.operands[1]
-                    if o.dispSize != 0:
-                        print newline.obj
-                        print hex(o.disp)
-                        x =  newline.obj.address + newline.obj.size + o.disp
-                        print self.plugin.stringFromVA(x)
-
-
             self.OPCODES.append(newline)
             g += 1
             if g == self.ROWS:
@@ -520,7 +519,7 @@ class DisasmViewMode(ViewMode):
 
 
         # let's color some branch instr
-        if asm.mnemonic in ['JZ', 'JB', 'JP', 'CALL', 'JMP', 'JNZ']:
+        if asm.obj.flowControl != 'FC_NONE':
             qp.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0)))
         else:
             qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
@@ -530,11 +529,17 @@ class DisasmViewMode(ViewMode):
 
         cemu.write(asm.restOfInstr)
 
+        if asm.symbol:
+            cemu.write((25-len(asm.restOfInstr))*' ')
+            qp.setPen(QtGui.QPen(QtGui.QColor('yellow'), 1, QtCore.Qt.SolidLine))
+            qp.setBrush(QtGui.QBrush(QtGui.QColor(128, 0, 0)))
+            cemu.write('->' + asm.symbol)
+
         if len(asm.refString) > 4:
             cemu.write((30-len(asm.restOfInstr))*' ')
 
             qp.setPen(QtGui.QPen(QtGui.QColor(82, 192, 192), 1, QtCore.Qt.SolidLine))
-            cemu.write('; ' + asm.refString)
+            cemu.write('; "{0}"'.format(asm.refString))
 
 
     def drawTextMode(self, qp):
@@ -548,9 +553,7 @@ class DisasmViewMode(ViewMode):
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         if len(self.OPCODES) == 0:
-
             self._getOpcodes(self.dataModel.getOffset(), str(self.getDisplayablePage()), self.plugin.hintDisasm())
-
 
 
         for i in range(self.ROWS):
@@ -559,22 +562,44 @@ class DisasmViewMode(ViewMode):
                 self._drawRow(qp, cemu, i, asm)
 
 
+    def _getRowInPage(self, offset):
+
+        offset -= self.dataModel.getOffset()
+        size = 0
+        for i, asm in enumerate(self.OPCODES):
+            if size + asm.size > offset:
+                return i
+            size += asm.size
+
+        return None
+
+    def _getOffsetOfRow(self, row):
+        size = 0
+        for i, asm in enumerate(self.OPCODES):
+            if i == row:
+                return size
+
+            size += asm.size                
+
+        return None
+
     def goTo(self, offset):
         tsize = sum([asm.size for asm in self.OPCODES])
 
         if offset < self.dataModel.getOffset() + tsize and offset > self.dataModel.getOffset():
-            # if in current page, move cursore
-            x, y = self.dataModel.getXYInPage(offset)
-            self.cursor.moveAbsolute(y + self.DRAW_AREA, x)
+            # if in current page, move cursor
+            row = self._getRowInPage(offset)
+            if row:
+                self.cursor.moveAbsolute(0, row)
         else:
             # else, move page
             self.dataModel.goTo(offset)
-            self.cursor.moveAbsolute(self.DRAW_AREA, 0)
+            self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm())            
+            self.cursor.moveAbsolute(0, 0)
             #self.draw(refresh=True)
 
         #TODO: getDisplayablePage() won't contain what we want to disasm. we will use dataModel
         #      in this view, getDisplayablePage will contain disasm text, because that is what is displayed
-        self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm())
 
         self.draw(refresh=True)
         if self.widget:
@@ -585,35 +610,14 @@ class DisasmViewMode(ViewMode):
         self.scroll(0, -number*self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
 
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
-        start = time()        
+        #start = time()        
 
-        if not cachePix:
-            self.qpix.scroll(0, dy*self.fontHeight, self.qpix.rect())
+        RowsToDraw = []
 
-        qp = QtGui.QPainter()
-
-        if cachePix:
-            qp.begin(cachePix)
-        else:
-            qp.begin(self.qpix)
-
-        #self.font.setStyleHint(QtGui.QFont.AnyStyle, QtGui.QFont.PreferAntialias)
-        qp.setFont(self.font)
-        qp.setPen(self.textPen)
 
         factor = abs(dy)
-        if dy < 0:
-            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
 
-        if dy > 0:
-            qp.fillRect(0, 0, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
 
-        cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
-
-        lastPen = None
-        lastBrush = None
-
-        
         # repeat as many rows we have scrolled
         
         for row in range(factor):
@@ -640,11 +644,10 @@ class DisasmViewMode(ViewMode):
                 iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
                 # eat first instruction from the page
                 d = iterable[0]
-                #print str(hex(start)) + '  ' + str(hex(d.size))
 
             if dy >= 0:
                 # we try to decode from current offset - 50, in this case even if decoding is incorrect (will overlap),
-                # in 50 bytes it is possible to correct itself, so hopefully last instruction it's decoded corectly and
+                # in 50 bytes it is possible to correct itself, so hopefully last instruction it's decoded correctly and
                 # followed correctly by current_offset instruction
                 if self.dataModel.getOffset() < 50:
                     start = 0
@@ -655,6 +658,10 @@ class DisasmViewMode(ViewMode):
                 end = self.dataModel.getOffset()
                 #print 'end ' + str(hex(end))
                 iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
+
+                if len(iterable) == 0:
+                    # maybe we are at beginning cannot scroll more
+                    break
 
                 d = iterable[-1]
 
@@ -680,20 +687,48 @@ class DisasmViewMode(ViewMode):
                 self.OPCODES.insert(0, newasm)
 
             if dy < 0:
-                #self._drawRow(qp, cemu, self.ROWS - 1, newasm)
-                self._drawRow(qp, cemu, self.ROWS - factor + row , newasm)
+                #RowsToDraw.append((self.ROWS - factor + row, newasm))
+                RowsToDraw.append((self.ROWS + row, newasm))
 
             if dy > 0:
-                #print newasm.instruction
-                self._drawRow(qp, cemu, factor - row - 1, newasm)
+                #RowsToDraw.append((factor - row - 1, newasm))
+                RowsToDraw.append((-row - 1, newasm))
 
-            qp.setBackgroundMode(0)
+        # draw
 
-          
+        if len(RowsToDraw) < abs(dy):
+            # maybe we couldn't draw dy rows (possible we reached the beginning of the data to early), recalculate dy
+            dy = len(RowsToDraw)*dy/abs(dy)
+            factor = abs(dy)
+
+        if not cachePix:
+            self.qpix.scroll(0, dy*self.fontHeight, self.qpix.rect())
+
+        qp = QtGui.QPainter()
+        if cachePix:
+            qp.begin(cachePix)
+        else:
+            qp.begin(self.qpix)
+
+        qp.setFont(self.font)
+        qp.setPen(self.textPen)
+
+        # erase rows that will disappear
+        if dy < 0:
+            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
+
+        if dy > 0:
+            qp.fillRect(0, 0, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
+
+        cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
+
+        for row, asm in RowsToDraw:
+            self._drawRow(qp, cemu, dy + row, asm)
+
 
         qp.end()
 
-        end = time() - start
+        #end = time() - start
 
     def scroll(self, dx, dy, cachePix=None, pageOffset=None):
         if dx != 0:
@@ -747,7 +782,7 @@ class DisasmViewMode(ViewMode):
 
         if direction == Directions.Right:
             asm = self.OPCODES[cursorY]
-            line = self.DRAW_AREA*' ' + asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
+            line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
 
             if cursorX == len(line) - 1:
 #            if cursorX == self.COLUMNS-1:
@@ -782,7 +817,8 @@ class DisasmViewMode(ViewMode):
                 self.cursor.move(0, -1)
 
         if direction == Directions.End:
-            self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
+            pass
+            #self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
             #self.cursorX = self.COLUMNS-1
             #self.cursorY = self.ROWS-1
 
@@ -792,32 +828,52 @@ class DisasmViewMode(ViewMode):
             #self.cursorY = 0
 
         if direction == Directions.CtrlHome:
-            self.dataModel.slideToFirstPage()
-            self.draw(refresh=True)
-            self.cursor.moveAbsolute(0, 0)
-            #self.cursorX = 0
-            #self.cursorY = 0
+            self.goTo(0)
 
         if direction == Directions.CtrlEnd:
             self.dataModel.slideToLastPage()
             self.draw(refresh=True)
             self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
-            #self.cursorX = self.COLUMNS-1
-            #self.cursorY = self.ROWS-1
+
+    def _followBranch(self):
+        cursorX, cursorY = self.cursor.getPosition()
+        asm = self.OPCODES[cursorY]
+
+        asm = asm.obj
+        if asm.flowControl != 'FC_NONE':
+            for o in asm.operands:
+                if o.dispSize != 0:
+                    if 'FLAG_RIP_RELATIVE' in asm.flags:
+                        value =  asm.address + asm.size + o.disp
+                    else:
+                        value = o.disp
+                else:
+                    value = o.value
+
+
+                fofs = self.plugin.disasmVAtoFA(value)
+                if fofs != None:
+                    rowOfs = self._getOffsetOfRow(cursorY)
+                    if rowOfs != None:
+                        self.FlowHistory.append(rowOfs + self.dataModel.getOffset())
+                        self.goTo(fofs)
+
+    def _followBranchHistory(self):
+        if len(self.FlowHistory) > 0:
+            offset = self.FlowHistory[-1]
+            del self.FlowHistory[-1]
+            self.goTo(offset)
 
     def handleKeyEvent(self, modifiers, key):
 
         if modifiers == QtCore.Qt.ControlModifier:
             if key == QtCore.Qt.Key_Right:
                 self.dataModel.slide(1)
-
                 self.addop((self.scroll, -1, 0))
-                #self.scroll(-1, 0)
 
             if key == QtCore.Qt.Key_Left:
                 self.dataModel.slide(-1)
                 self.addop((self.scroll, 1, 0))
-                #self.scroll(1, 0)
 
             if key == QtCore.Qt.Key_Down:
                 self.addop((self.scroll, 0, -1))
@@ -828,9 +884,8 @@ class DisasmViewMode(ViewMode):
                 self.addop((self.draw,))
 
             if key == QtCore.Qt.Key_End:
-                self.moveCursor(Directions.CtrlEnd)
-                self.addop((self.draw,))
-                #self.draw()
+                # not supported
+                pass
 
             if key == QtCore.Qt.Key_Home:
                 self.moveCursor(Directions.CtrlHome)
@@ -839,7 +894,7 @@ class DisasmViewMode(ViewMode):
 
             return True
 
-        else:#selif modifiers == QtCore.Qt.NoModifier:
+        else:#elif modifiers == QtCore.Qt.NoModifier:
 
             if key == QtCore.Qt.Key_Left:
                 self.moveCursor(Directions.Left)
@@ -877,6 +932,14 @@ class DisasmViewMode(ViewMode):
     
             if key == QtCore.Qt.Key_PageUp:
                 self.addop((self.scrollPages, -1))
+                self.addop((self.draw,))
+
+            if key == QtCore.Qt.Key_Return:
+                self.addop((self._followBranch,))
+                self.addop((self.draw,))
+
+            if key == QtCore.Qt.Key_Escape:
+                self.addop((self._followBranchHistory,))
                 self.addop((self.draw,))
 
             return True
