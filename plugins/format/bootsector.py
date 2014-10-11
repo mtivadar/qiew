@@ -3,6 +3,8 @@ import Banners
 import pefile
 from TextDecorators import *
 from PyQt4 import QtGui, QtCore
+import PyQt4
+
 from cemu import *
 import sys
 
@@ -46,6 +48,137 @@ class Bootsector(FileFormat):
 
     def getBanners(self):
         return [BootBanner]
+
+    def _showit(self):
+        if not self.w.isVisible():
+            self.w.show()
+            #self.w.ui.treeWidgetHeader.setFocus()
+            #self.w.ui.treeWidgetHeader.activateWindow()
+        else:
+            self.w.hide()
+
+    def _writeData(self, w):
+        Types = {0x07 : 'NTFS',
+                 0x06 : 'FAT16',
+                 0x0B : 'FAT32',
+                 0x0F : 'Extended',
+                 0x17 : 'Hidden NTFS',
+                 0x82 : 'Linux Swap',
+                 0x83 : 'Linux',
+                 0xDE : 'Dell diagnostic'}
+
+        # bootable
+        active = None
+
+        for i in range(4):
+            b = '0x{0}'.format(self.dataModel.getBYTE(446 + i*16, asString=True))
+            if b == '0x80':
+                active = i
+
+            item = QtGui.QTableWidgetItem(b)
+            item.setTextAlignment(QtCore.Qt.AlignRight)
+            if active and i == active:
+                item.setTextColor(QtGui.QColor('green'))
+
+            w.ui.tableWidget.setItem(0, i, item)
+
+        # type
+        for i in range(4):
+            b = '0x{0}'.format(self.dataModel.getBYTE(446 + i*16 + 4, asString=True))
+            if int(b, 16) in Types:
+                b = Types[int(b,16)]
+
+            item = QtGui.QTableWidgetItem(b)
+            item.setTextAlignment(QtCore.Qt.AlignRight)
+            if active and i == active:
+                item.setTextColor(QtGui.QColor('green'))
+
+            w.ui.tableWidget.setItem(1, i, item)
+
+        # CHS Start
+        for i in range(4):
+            b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 1) & 0x00FFFFFF)
+
+            item = QtGui.QTableWidgetItem(b)
+            item.setTextAlignment(QtCore.Qt.AlignRight)
+            if active and i == active:
+                item.setTextColor(QtGui.QColor('green'))
+
+            w.ui.tableWidget.setItem(2, i, item)
+
+        # CHS End
+        for i in range(4):
+            b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 5) & 0x00FFFFFF)
+
+            item = QtGui.QTableWidgetItem(b)
+            item.setTextAlignment(QtCore.Qt.AlignRight)
+            if active and i == active:
+                item.setTextColor(QtGui.QColor('green'))
+
+            w.ui.tableWidget.setItem(3, i, item)
+
+        # LBA Start
+        for i in range(4):
+            b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 8))
+
+            item = QtGui.QTableWidgetItem(b)
+            item.setTextAlignment(QtCore.Qt.AlignRight)
+            if active and i == active:
+                item.setTextColor(QtGui.QColor('green'))
+
+            w.ui.tableWidget.setItem(4, i, item)
+
+        # LBA End
+        for i in range(4):
+            b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 0xC))
+
+            item = QtGui.QTableWidgetItem(b)
+            item.setTextAlignment(QtCore.Qt.AlignRight)
+            if active and i == active:
+                item.setTextColor(QtGui.QColor('green'))
+
+            w.ui.tableWidget.setItem(5, i, item)
+
+    def registerShortcuts(self, parent):
+        self._parent = parent
+        self.w = WHeaders(parent, self)
+        self._writeData(self.w)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), parent, self._showit, self._showit)
+
+
+class WHeaders(QtGui.QDialog):
+    
+    def __init__(self, parent, plugin):
+        super(WHeaders, self).__init__(parent)
+        
+        self.parent = parent
+        self.plugin = plugin
+        self.oshow = super(WHeaders, self).show
+
+        self.ui = PyQt4.uic.loadUi('./plugins/format/bootsector.ui', baseinstance=self)
+
+        self.initUI()
+
+    def show(self):
+
+        # TODO: remember position? resize plugin windows when parent resize?
+        pwidth = self.parent.parent.size().width()
+        pheight = self.parent.parent.size().height()
+
+        width = self.ui.tableWidget.size().width()+15
+        height = self.ui.tableWidget.size().height()+15
+
+        self.setGeometry(pwidth - width - 15, pheight - height, width, height)
+        self.setFixedSize(width, height)
+
+        self.oshow()
+
+    def initUI(self):      
+
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), self, self.close, self.close)
+
 
 class BootBanner(Banners.FileAddrBanner):
     def draw(self):
