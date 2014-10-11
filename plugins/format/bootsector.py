@@ -46,14 +46,15 @@ class Bootsector(FileFormat):
     def hintDisasmVA(self, offset):
         return 0x7c00 + offset
 
+    def disasmVAtoFA(self, va):
+        return va - 0x7c00
+
     def getBanners(self):
         return [BootBanner]
 
     def _showit(self):
         if not self.w.isVisible():
             self.w.show()
-            #self.w.ui.treeWidgetHeader.setFocus()
-            #self.w.ui.treeWidgetHeader.activateWindow()
         else:
             self.w.hide()
 
