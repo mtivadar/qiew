@@ -81,9 +81,9 @@ class PE(FileFormat, DisasmInterface):
 
         import string
         Special =  string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
-
         while doit:
             c = data.getChar(offset)
+
             if not c:
                 break
 
@@ -102,6 +102,33 @@ class PE(FileFormat, DisasmInterface):
                 doit = False
 
         return s
+
+    def disasmVAtoFA(self, va):
+        try:
+            offset = self.PE.get_offset_from_rva(va - self.PE.OPTIONAL_HEADER.ImageBase)
+        except:
+            return None
+
+        return offset
+
+    def disasmSymbol(self, va):
+        # TODO: should implement with a lookup table
+        for i, entry in enumerate(self.PE.DIRECTORY_ENTRY_IMPORT):
+
+            for imp in entry.imports:
+                if imp.address == va:
+                    name = ''
+                    if imp.name:
+                        name = imp.name
+
+                    if imp.ordinal:
+                        name = imp.ordinal
+
+                    return '{0}:{1}'.format(entry.dll, name)
+
+        return None
+
+
 
 
     def getBanners(self):
