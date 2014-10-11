@@ -1,4 +1,5 @@
 from yapsy.IPlugin import IPlugin
+import distorm3 # for interface, should be moved
 
 class FileFormat(IPlugin):
     name = ''
@@ -23,3 +24,9 @@ class FileFormat(IPlugin):
     # returns ascii string in disasm view (from a va)
     def stringFromVA(self, va):
         return ''
+
+    def disasmVAtoFA(self, va):
+        return None
+
+    def disasmSymbol(self, va):
+        return None
