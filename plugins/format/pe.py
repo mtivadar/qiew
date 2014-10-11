@@ -662,7 +662,7 @@ class WHeaders(QtGui.QDialog):
         self.plugin = plugin
         self.oshow = super(WHeaders, self).show
 
-        self.ui = PyQt4.uic.loadUi('./plugins/format/dialog_pe.ui', baseinstance=self)
+        self.ui = PyQt4.uic.loadUi('./plugins/format/pe.ui', baseinstance=self)
 
         self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
         self.ui.treeWidgetImports.installEventFilter(self.ei)
