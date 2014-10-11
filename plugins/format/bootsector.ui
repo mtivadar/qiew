@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>502</width>
+    <height>245</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Partition table</string>
+  </property>
+  <property name="locale">
+   <locale language="English" country="UnitedStates"/>
+  </property>
+  <widget class="QTableWidget" name="tableWidget">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>10</y>
+     <width>481</width>
+     <height>221</height>
+    </rect>
+   </property>
+   <property name="editTriggers">
+    <set>QAbstractItemView::NoEditTriggers</set>
+   </property>
+   <property name="selectionMode">
+    <enum>QAbstractItemView::NoSelection</enum>
+   </property>
+   <property name="selectionBehavior">
+    <enum>QAbstractItemView::SelectColumns</enum>
+   </property>
+   <row>
+    <property name="text">
+     <string>Bootable</string>
+    </property>
+   </row>
+   <row>
+    <property name="text">
+     <string>Type</string>
+    </property>
+   </row>
+   <row>
+    <property name="text">
+     <string>CHS Start</string>
+    </property>
+   </row>
+   <row>
+    <property name="text">
+     <string>CHS End</string>
+    </property>
+   </row>
+   <row>
+    <property name="text">
+     <string>LBA Start</string>
+    </property>
+   </row>
+   <row>
+    <property name="text">
+     <string>LBA End</string>
+    </property>
+   </row>
+   <column>
+    <property name="text">
+     <string>#1</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>#2</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>#3</string>
+    </property>
+   </column>
+   <column>
+    <property name="text">
+     <string>#4</string>
+    </property>
+   </column>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
