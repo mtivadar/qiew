@@ -31,16 +31,16 @@ class binWidget(QtGui.QWidget):
     scrolled = QtCore.pyqtSignal(int, name='scroll')
     oldscrolled = QtCore.SIGNAL('scroll')
 
-    def __init__(self, parent, mapped):
+    def __init__(self, parent, source):
         super(binWidget, self).__init__()
 
         self.parent = parent
         
         # offset for text window
-        self.data = mapped
+        #self.data = mapped
         self.dataOffset = 0
         
-        self.dataModel = DataModel(mapped)
+        self.dataModel = FileDataModel(source)
         self.cursor = Cursor(0, 0)
 
         
@@ -252,7 +252,6 @@ class binWidget(QtGui.QWidget):
 
 
 
-
 class Qiew(QtGui.QWidget):
     
     def __init__(self):
@@ -261,17 +260,13 @@ class Qiew(QtGui.QWidget):
 
     def initUI(self):      
 
-        if len(sys.argv) > 1:
-            f = open(sys.argv[1], "r+b")
-        else:
+        if len(sys.argv) <= 1:
             print 'usage: qiew.py <file>'
             sys.exit()
 
-        # memory-map the file, size 0 means whole file
-        mapped = mmap.mmap(f.fileno(), 0)
-        #mapped.close()
+        title = sys.argv[1]
 
-        self.wid = binWidget(self, mapped)
+        self.wid = binWidget(self, title)
         
         hbox = QtGui.QHBoxLayout()
         hbox.addWidget(self.wid)
@@ -280,7 +275,6 @@ class Qiew(QtGui.QWidget):
         screen = QtGui.QDesktopWidget().screenGeometry()        
         self.setGeometry(0, 0, screen.width()-100, screen.height()-100)
 
-        title = sys.argv[1]
         self.setWindowTitle('qiew - {0}'.format(sys.argv[1]))
         self.showMaximized()
         self.wid.activateWindow()
