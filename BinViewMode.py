@@ -313,7 +313,8 @@ class BinViewMode(ViewMode):
                 self.scroll_v(dy, cachePix, pageOffset)
             else:
                 if dy <= 0:
-                    self.dataModel.slideToLastPage()
+                    pass
+                    #self.dataModel.slideToLastPage()
                 else:
                     self.dataModel.slideToFirstPage()
 
@@ -405,32 +406,35 @@ class BinViewMode(ViewMode):
                     self.scroll(1, 0)
                 else:
                     self.cursor.moveAbsolute(self.COLUMNS-1, cursorY - 1)
-                    #cursorX = self.COLUMNS-1                    
-                    #cursorY -= 1
             else:
                 self.cursor.move(-1, 0)
-                #cursorX -= 1
+
 
         if direction == Directions.Right:
+            if self.getCursorAbsolutePosition() + 1 >= self.dataModel.getDataSize():
+                return
+
             if cursorX == self.COLUMNS-1:
                 if cursorY == self.ROWS-1:
                     self.dataModel.slide(1)
                     self.scroll(-1, 0)
                 else:
                     self.cursor.moveAbsolute(0, cursorY + 1)
-                    #self.cursorX = 0
-                    #self.cursorY += 1
             else:
                 self.cursor.move(1, 0)
-                #self.cursorX += 1
+
 
         if direction == Directions.Down:
+            if self.getCursorAbsolutePosition() + self.COLUMNS >= self.dataModel.getDataSize():
+                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize()-1)
+                self.cursor.moveAbsolute(x, y)
+                return
+
             if cursorY == self.ROWS-1:
                 self.dataModel.slideLine(1)
                 self.scroll(0, -1)
             else:
                 self.cursor.move(0, 1)
-                #self.cursorY += 1
 
         if direction == Directions.Up:
             if cursorY == 0:
@@ -438,31 +442,27 @@ class BinViewMode(ViewMode):
                 self.scroll(0, 1)
             else:
                 self.cursor.move(0, -1)
-                #self.cursorY -= 1
 
         if direction == Directions.End:
-            self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
-            #self.cursorX = self.COLUMNS-1
-            #self.cursorY = self.ROWS-1
+            if self.dataModel.getDataSize() < self.getCursorAbsolutePosition() + self.ROWS * self.COLUMNS:
+                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize()-1)
+                self.cursor.moveAbsolute(x, y)
+
+            else:
+                self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
 
         if direction == Directions.Home:
             self.cursor.moveAbsolute(0, 0)
-            #self.cursorX = 0
-            #self.cursorY = 0
 
         if direction == Directions.CtrlHome:
             self.dataModel.slideToFirstPage()
             self.draw(refresh=True)
             self.cursor.moveAbsolute(0, 0)
-            #self.cursorX = 0
-            #self.cursorY = 0
 
         if direction == Directions.CtrlEnd:
             self.dataModel.slideToLastPage()
             self.draw(refresh=True)
-            self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
-            #self.cursorX = self.COLUMNS-1
-            #self.cursorY = self.ROWS-1
+            self.moveCursor(Directions.End)
 
     def keyFilter(self):
         return [
@@ -493,32 +493,41 @@ class BinViewMode(ViewMode):
                 self.dataModel.slide(1)
 
                 self.addop((self.scroll, -1, 0))
-                #self.scroll(-1, 0)
+
+                if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
+                    y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
+                    self.cursor.moveAbsolute(x, y)
+
 
             if key == QtCore.Qt.Key_Left:
                 self.dataModel.slide(-1)
                 self.addop((self.scroll, 1, 0))
-                #self.scroll(1, 0)
+
 
             if key == QtCore.Qt.Key_Down:
                 self.dataModel.slideLine(1)
                 self.addop((self.scroll, 0, -1))
-                #self.scroll(0, -1)
+
+                if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
+                    y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
+                    self.cursor.moveAbsolute(x, y)
+
+
 
             if key == QtCore.Qt.Key_Up:
                 self.dataModel.slideLine(-1)
                 self.addop((self.scroll, 0, 1))
-                #self.scroll(0, 1)
+
 
             if key == QtCore.Qt.Key_End:
                 self.moveCursor(Directions.CtrlEnd)
                 self.addop((self.draw,))
-                #self.draw()
+
 
             if key == QtCore.Qt.Key_Home:
                 self.moveCursor(Directions.CtrlHome)
                 self.addop((self.draw,))
-                #self.draw()
+
 
             return True
 
@@ -565,6 +574,23 @@ class BinViewMode(ViewMode):
                 #self.scrollPages(-1)
                 self.addop((self.scrollPages, -1))
 
+            if key == QtCore.Qt.Key_F9:
+                a,b = self.selector.getCurrentSelection()
+                import os
+                name = os.path.basename(self.dataModel.source)
+                open(name + '.drop', 'wb').write(self.dataModel.getStream(a, b))
+
+                L = ['{0:02X}'.format(o) for o in self.dataModel.getStream(a, b)]
+
+                l = len(L)
+                for i in range(l/20 + 1):
+                    L.insert((i+0)*20 + i, '\n')
+
+                open(name + '.drop' + '.hex', 'wb').write(' '.join(L))
+                print 'da'
+                #self.dataModel.slidePage(-1)
+                #self.scrollPages(-1)
+                #self.addop((self.scrollPages, -1))
 
             return True
 

@@ -132,7 +132,8 @@ class HexViewMode(ViewMode):
                 self.scroll_v(dy)
             else:
                 if dy <= 0:
-                    self.dataModel.slideToLastPage()
+                    pass
+                    #self.dataModel.slideToLastPage()
                 else:
                     self.dataModel.slideToFirstPage()
                 self.draw(refresh=True)
@@ -186,17 +187,20 @@ class HexViewMode(ViewMode):
 
         factor = abs(dx)
 
+        # There are some trails from the characters, when scrolling. trail == number of pixel to erase near the character
+        trail = 5
+
         textBegining = self.COLUMNS*3 + gap
         if dx < 0:
             # hex
             qp.fillRect((self.COLUMNS - 1*factor)*3*self.fontWidth, 0, factor * self.fontWidth * 3, self.ROWS*self.fontHeight, self.backgroundBrush)
             # text
-            qp.fillRect((textBegining + self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth, self.ROWS*self.fontHeight, self.backgroundBrush)
+            qp.fillRect((textBegining + self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth+trail, self.ROWS*self.fontHeight, self.backgroundBrush)
         if dx > 0:
             # hex
             qp.fillRect(0, 0, factor * 3 * self.fontWidth, self.ROWS*self.fontHeight, self.backgroundBrush)
             # text
-            qp.fillRect(textBegining*self.fontWidth, 0, factor * self.fontWidth, self.ROWS*self.fontHeight, self.backgroundBrush)            
+            qp.fillRect(textBegining*self.fontWidth - trail, 0, factor * self.fontWidth + trail, self.ROWS*self.fontHeight, self.backgroundBrush)            
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.CON_COLUMNS)
 
@@ -212,8 +216,10 @@ class HexViewMode(ViewMode):
                 if dx > 0:
                     idx = (i)*(self.COLUMNS) + (column)
 
-                
-                qp.setPen(self.transformationEngine.choosePen(idx))
+                if len(self.getDisplayablePage()) > idx:                
+                    qp.setPen(self.transformationEngine.choosePen(idx))
+                else:
+                    break
 
                 if self.transformationEngine.chooseBrush(idx) != None:
                     qp.setBackgroundMode(1)
@@ -276,7 +282,11 @@ class HexViewMode(ViewMode):
                     qp.setBackgroundMode(1)
                     qp.setBackground(self.transformationEngine.chooseBrush(idx))
 
-                c = self.getDisplayablePage()[idx]
+                if len(self.getDisplayablePage()) > idx:
+                    c = self.getDisplayablePage()[idx]
+                else:
+                    break
+
                 if i == self.COLUMNS - 1:
                     hex_s = str(hex(c)[2:]).zfill(2)
                 else:                
@@ -372,32 +382,35 @@ class HexViewMode(ViewMode):
                     self.scroll(1, 0)
                 else:
                     self.cursor.moveAbsolute(self.COLUMNS-1, cursorY - 1)
-                    #self.cursorX = self.COLUMNS-1
-                    #cursorY -= 1
             else:
                 self.cursor.move(-1, 0)
-                #self.cursorX -= 1
+
 
         if direction == Directions.Right:
+            if self.getCursorAbsolutePosition() + 1 >= self.dataModel.getDataSize():
+                return
+
             if cursorX == self.COLUMNS-1:
                 if cursorY == self.ROWS-1:
                     self.dataModel.slide(1)
                     self.scroll(-1, 0)
                 else:
                     self.cursor.moveAbsolute(0, cursorY + 1)
-                    #self.cursorX = 0
-                    #cursorY += 1
             else:
                 self.cursor.move(1, 0)
-                #self.cursorX += 1
+
 
         if direction == Directions.Down:
+            if self.getCursorAbsolutePosition() + self.COLUMNS >= self.dataModel.getDataSize():
+                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize()-1)
+                self.cursor.moveAbsolute(x, y)
+                return
+
             if cursorY == self.ROWS-1:
                 self.dataModel.slideLine(1)
                 self.scroll(0, -1)
             else:
                 self.cursor.move(0, 1)
-                #self.cursorY += 1
 
         if direction == Directions.Up:
             if cursorY == 0:
@@ -405,7 +418,29 @@ class HexViewMode(ViewMode):
                 self.scroll(0, 1)
             else:
                 self.cursor.move(0, -1)
-                #self.cursorY -= 1    
+
+        if direction == Directions.End:
+            if self.dataModel.getDataSize() < self.getCursorAbsolutePosition() + self.ROWS * self.COLUMNS:
+                y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize()-1)
+                self.cursor.moveAbsolute(x, y)
+
+            else:
+                self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
+
+        if direction == Directions.Home:
+            self.cursor.moveAbsolute(0, 0)
+
+        if direction == Directions.CtrlHome:
+            self.dataModel.slideToFirstPage()
+            self.draw(refresh=True)
+            self.cursor.moveAbsolute(0, 0)
+
+        if direction == Directions.CtrlEnd:
+            self.dataModel.slideToLastPage()
+            self.draw(refresh=True)
+            self.moveCursor(Directions.End)
+
+
 
     def drawCursor(self, qp):
         qp.setBrush(QtGui.QColor(255, 255, 0))
@@ -451,21 +486,30 @@ class HexViewMode(ViewMode):
     def handleKeyEvent(self, modifiers, key):
 
         if modifiers == QtCore.Qt.ControlModifier:
+
             if key == QtCore.Qt.Key_Right:
                 self.dataModel.slide(1)
 
                 self.addop((self.scroll, -1, 0))
-                #self.scroll(-1, 0)
+
+                if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
+                    y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
+                    self.cursor.moveAbsolute(x, y)
+
 
             if key == QtCore.Qt.Key_Left:
                 self.dataModel.slide(-1)
                 self.addop((self.scroll, 1, 0))
-                #self.scroll(1, 0)
+
 
             if key == QtCore.Qt.Key_Down:
                 self.dataModel.slideLine(1)
                 self.addop((self.scroll, 0, -1))
-                #self.scroll(0, -1)
+
+                if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
+                    y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
+                    self.cursor.moveAbsolute(x, y)
+
 
             if key == QtCore.Qt.Key_Up:
                 self.dataModel.slideLine(-1)
