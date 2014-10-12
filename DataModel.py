@@ -1,8 +1,11 @@
+import sys
+import mmap
+
 class Observer:
     def update_geometry(self):
         NotImplementedError('method not implemented.')
 
-class DataModel(Observer):
+class DataModel(object, Observer):
     def __init__(self, data):
         self.dataOffset = 0
         self.rows = self.cols = 0
@@ -39,6 +42,9 @@ class DataModel(Observer):
         self.slide(factor*self.cols*self.rows)
 
     def slideToLastPage(self):
+        if self.rows*self.cols > len(self.data):
+            return
+
         self.dataOffset = len(self.data) - self.cols*self.rows
 
     def slideToFirstPage(self):
@@ -69,7 +75,7 @@ class DataModel(Observer):
         return s
 
     def getDWORD(self, offset, asString=False):
-        if offset + 4 > len(self.data):
+        if offset + 4 >= len(self.data):
             return None
 
         b = bytearray(self.data[offset:offset+4])
@@ -133,4 +139,23 @@ class DataModel(Observer):
 
     def getDataSize(self):
         return len(self.data)
+
+    @property
+    def source(self):
+        return ''
         
+
+class FileDataModel(DataModel):
+    def __init__(self, filename):
+        self._filename = filename
+
+        f = open(filename, "r+b")
+
+        # memory-map the file, size 0 means whole file
+        mapped = mmap.mmap(f.fileno(), 0)
+
+        super(FileDataModel, self).__init__(mapped)
+
+    @property
+    def source(self):
+        return self._filename
