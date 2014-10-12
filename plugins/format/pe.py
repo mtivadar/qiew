@@ -112,6 +112,9 @@ class PE(FileFormat, DisasmInterface):
         return offset
 
     def disasmSymbol(self, va):
+        if not hasattr(self.PE, 'DIRECTORY_ENTRY_IMPORT'):
+            return None
+
         # TODO: should implement with a lookup table
         for i, entry in enumerate(self.PE.DIRECTORY_ENTRY_IMPORT):
 
@@ -172,26 +175,28 @@ class PE(FileFormat, DisasmInterface):
         # add imports
         parent = w.ui.treeWidgetImports
         parent.setColumnWidth(0, 300) 
-        for i, entry in enumerate(self.PE.DIRECTORY_ENTRY_IMPORT):
-            
-            child = QtGui.QTreeWidgetItem(None)
-            child.setText(0, entry.dll)
-            parent.addTopLevelItem(child)
-
-            for imp in entry.imports:
+        try:
+            for i, entry in enumerate(self.PE.DIRECTORY_ENTRY_IMPORT):
+                
                 child = QtGui.QTreeWidgetItem(None)
-                if imp.name:
-                    child.setText(0, imp.name)
-                    child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
+                child.setText(0, entry.dll)
+                parent.addTopLevelItem(child)
 
-                    parent.topLevelItem(i).addChild(child)
+                for imp in entry.imports:
+                    child = QtGui.QTreeWidgetItem(None)
+                    if imp.name:
+                        child.setText(0, imp.name)
+                        child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
-                if imp.ordinal:
-                    child.setText(0, 'ordinal:{0}'.format(imp.ordinal))
-                    child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
+                        parent.topLevelItem(i).addChild(child)
 
-                    parent.topLevelItem(i).addChild(child)
+                    if imp.ordinal:
+                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal))
+                        child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
+                        parent.topLevelItem(i).addChild(child)
+        except Exception, e:
+            print e
 
         # populate with sections
         parent = w.ui.treeWidgetSections
