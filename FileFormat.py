@@ -1,17 +1,8 @@
 from yapsy.IPlugin import IPlugin
 import distorm3 # for interface, should be moved
 
-class FileFormat(IPlugin):
-    name = ''
 
-    def isRecognized(self):
-        return False
-
-    def init(self, viewMode):
-        pass
-
-    def registerShortcuts(self, parent):
-        pass
+class IDisasm():
 
     # tells disasm view what to decode
     def hintDisasm(self):
@@ -30,3 +21,16 @@ class FileFormat(IPlugin):
 
     def disasmSymbol(self, va):
         return None
+
+
+class FileFormat(IPlugin, IDisasm):
+    name = ''
+
+    def isRecognized(self):
+        return False
+
+    def init(self, viewMode):
+        pass
+
+    def registerShortcuts(self, parent):
+        pass
