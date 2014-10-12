@@ -253,22 +253,19 @@ class binWidget(QtGui.QWidget):
 
 
 
-class Example(QtGui.QWidget):
+class Qiew(QtGui.QWidget):
     
     def __init__(self):
-        super(Example, self).__init__()
-        
+        super(Qiew, self).__init__()
         self.initUI()
-        
-    def xx(self):
-        print 'xx'
 
     def initUI(self):      
 
         if len(sys.argv) > 1:
             f = open(sys.argv[1], "r+b")
         else:
-            f = open("notepad.exe", "r+b")
+            print 'usage: qiew.py <file>'
+            sys.exit()
 
         # memory-map the file, size 0 means whole file
         mapped = mmap.mmap(f.fileno(), 0)
@@ -282,26 +279,16 @@ class Example(QtGui.QWidget):
 
         screen = QtGui.QDesktopWidget().screenGeometry()        
         self.setGeometry(0, 0, screen.width()-100, screen.height()-100)
-        #self.setGeometry(100, 300, 1424, 310)
-        self.setWindowTitle('binhex widget')
-        #self.showFullScreen()
-        #shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+F"), self, self.close, self.close)
+
+        title = sys.argv[1]
+        self.setWindowTitle('qiew - {0}'.format(sys.argv[1]))
         self.showMaximized()
-        #print self.size()
-        #sys.exit()
         self.wid.activateWindow()
 
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    ex = Example()
-
-#    w = QtGui.QDialog()
-#    ex = Ui_Dialog()
-#    ex.setupUi(w)
-#    w.show()
-#    ex.setupUi()
-#    ex.show()
+    qiew = Qiew()
     sys.exit(app.exec_())
 
 
