@@ -191,6 +191,9 @@ class BottomBanner(Banner):
         cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
 
         dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
+        if dword is None:
+            dword = '----'
+
         sd = 'DWORD: {0}'.format(dword)
 
         pos = 'POS: {0:08x}'.format(self.viewMode.getCursorAbsolutePosition())
@@ -198,9 +201,14 @@ class BottomBanner(Banner):
 
 
         qword = self.dataModel.getQWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
+        if qword is None:
+            qword = '----'
         sq = 'QWORD: {0}'.format(qword)
 
         byte = self.dataModel.getBYTE(self.viewMode.getCursorAbsolutePosition(), asString=True)
+        if byte is None:
+            byte = '-'
+
         sb = 'BYTE: {0}'.format(byte)
 
         cemu.writeAt(1,  0, pos)
