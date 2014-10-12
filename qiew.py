@@ -105,7 +105,7 @@ class binWidget(QtGui.QWidget):
         
         for banner in po.getBanners():
             self.Banners.add(banner(self.dataModel, self.viewMode))
-                
+        
         po.init(self.viewMode)
         po.registerShortcuts(self)
         self.po = po

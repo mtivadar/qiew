@@ -6,22 +6,31 @@ from PyQt4 import QtGui, QtCore
 from cemu import *
 
 class Binary(FileFormat):
-#    def __init__(self):
-#        print 'hello'
     name = 'binary'
     priority = 0
+
     def recognize(self, dataModel):
-        return True
-        print 'world'
         self.dataModel = dataModel
+        return True
 
-        try:
-            self.PE = pefile.PE(data=dataModel.getData())
-        except:
-            return False
-        
+    def init(self, viewMode):
+        self.viewMode = viewMode
 
-        return False
+        self.MZbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
+        self.greenPen = QtGui.QPen(QtGui.QColor(255, 255, 0))
+        self.grayBrush = QtGui.QBrush(QtGui.QColor(128, 128, 128))
+        self.whitePen = QtGui.QPen(QtGui.QColor(255, 255, 255))        
+
+
+        self.textDecorator = TextDecorator(viewMode)
+        self.textDecorator = HighlightASCII(self.textDecorator)
+        self.textDecorator = HighlightPrefix(self.textDecorator, 'MZ', brush=self.MZbrush, pen=self.greenPen)
+        self.textDecorator = HighlightPrefix(self.textDecorator, 'PE\x00\x00', brush=self.MZbrush, pen=self.greenPen)
+        self.textDecorator = HighlightPrefix(self.textDecorator, '\xFF\x15', additionalLength=4, brush=self.grayBrush, pen=self.whitePen)
+        self.textDecorator = HighlightWideChar(self.textDecorator)
+
+        self.viewMode.setTransformationEngine(self.textDecorator)
+        return True
 
     def hintDisasm(self):
         return distorm3.Decode32Bits
@@ -32,5 +41,3 @@ class Binary(FileFormat):
     def getBanners(self):
         return [Banners.FileAddrBanner]
    
-    def init(self, viewMode):
-        self.viewMode = viewMode
