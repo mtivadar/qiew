@@ -11,10 +11,7 @@ import time
 
 import distorm3
 
-class DisasmInterface():
-    pass
-
-class PE(FileFormat, DisasmInterface):
+class PE(FileFormat):
     name = 'pe'
     priority = 5
     def recognize(self, dataModel):
