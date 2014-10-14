@@ -22,6 +22,7 @@ class ASMLine:
         self._mnemonic = d.mnemonic
         self._d = d
         self.refString = ''
+        self._str = ' '.join(self.instruction.split(' ')[1:])
 
         # gets ref string (only for PUSH and RIP addressing)
         if 'FLAG_RIP_RELATIVE' in d.flags:
@@ -88,7 +89,7 @@ class ASMLine:
     @property
     def instruction(self):
         return self._instruction
-      
+
     @property
     def restOfInstr(self):
         asm = self._d
@@ -97,7 +98,11 @@ class ASMLine:
             return ''
         else:
             #return ', '.join([str(o) for o in asm.operands])
-            return ' '.join(self.instruction.split(' ')[1:])
+            return self._str
+
+    @restOfInstr.setter
+    def restOFInstr(self, value):
+        self._str = value
 
     @property
     def refString(self):
@@ -508,6 +513,99 @@ class DisasmViewMode(ViewMode):
                 break
 
 
+    def _opdelegate(self, s, type, qp, cemu):
+        qp.save()
+        if type == 'VALUE':
+            qp.setPen(QtGui.QPen(QtGui.QColor('green')))
+        elif type == 'REGISTER':
+            qp.setPen(QtGui.QPen(QtGui.QColor('white')))
+        elif type == 'SYM':
+            qp.setPen(QtGui.QPen(QtGui.QColor('yellow'), 1, QtCore.Qt.SolidLine))
+        else:
+            qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
+
+
+        for c in s:
+            cemu.write_c(c)
+
+        qp.restore()
+        return s
+
+
+    def _expandOp(self, asm, callback, args):
+
+        SIZE = {}
+        SIZE[0] = ''
+        SIZE[8]  = 'BYTE'
+        SIZE[16] = 'WORD'
+        SIZE[32] = 'DWORD'
+        SIZE[64] = 'QWORD'
+
+        r = ''
+        for i, o in enumerate(asm.operands):
+            #print o.size
+            # put memory size modifier
+            # todo: i don't like this, but i'm not sure how to do it other way
+            if len(asm.operands) == 2:
+
+                if i == 0 and o.type == distorm3.OPERAND_MEMORY:
+                    g = asm.operands[1]
+                    if g.type == distorm3.OPERAND_IMMEDIATE:
+                        if len(set([p.size for p in asm.operands])) > 1:
+                            r += callback(SIZE[o.size], 'OP', *args)    
+                            r += callback(' ', 'OP', *args)
+
+                if i == 1 and o.type == distorm3.OPERAND_MEMORY:
+                    g = asm.operands[0]
+                    if g.size != o.size:
+                        r += callback(SIZE[o.size], 'OP', *args)
+                        r += callback(' ', 'OP', *args)
+
+            if o.type == distorm3.OPERAND_IMMEDIATE:
+                if o.value >= 0:
+                    r += callback("0x%x" % o.value, 'VALUE', *args)
+
+                else:
+                    r += callback("-0x%x" % abs(o.value), 'VALUE', *args)
+
+            elif o.type == distorm3.OPERAND_REGISTER:
+                r += callback(o.name, 'REGISTER', *args)
+
+            elif o.type == distorm3.OPERAND_ABSOLUTE_ADDRESS:
+                r += callback('[', 'OP', *args)
+                r += callback('0x%x'%o.disp, 'VALUE', *args)
+                r += callback(']', 'OP', *args)
+
+            elif o.type == distorm3.OPERAND_FAR_MEMORY:
+                r += callback('%s' % hex(o.seg), 'REGISTER', *args)
+                r += callback(':', 'OP')
+                r += callback('%s' % hex(o.off), 'REGISTER', *args)
+
+            elif (o.type == distorm3.OPERAND_MEMORY):
+                r += callback('[', 'OP', *args)
+
+                if o.base != None:
+                    r += callback(distorm3.Registers[o.base], 'REGISTER', *args)
+                    r += callback('+', 'OP', *args)
+
+                if o.index != None:
+                    r += callback(distorm3.Registers[o.index], 'REGISTER', *args)
+                    if o.scale > 1:
+                        r += callback('*%d'%o.scale, 'VALUE', *args)
+
+                if o.disp >= 0:
+                    r += callback('+0x%x'%o.disp, 'VALUE', *args)
+                else:
+                    r += callback('-0x%x'%abs(o.disp), 'VALUE', *args)
+
+                r += callback(']', 'OP', *args)
+
+            if i != len(asm.operands) - 1:
+                r += callback(', ', 'OP', *args)
+
+        return r
+
+
     def _drawRow(self, qp, cemu, row, asm):
         qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
 
@@ -517,7 +615,6 @@ class DisasmViewMode(ViewMode):
         # fill with spaces
         cemu.write((30 - len(asm.hex))*' ')
 
-
         # let's color some branch instr
         if asm.obj.flowControl != 'FC_NONE':
             qp.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0)))
@@ -525,15 +622,28 @@ class DisasmViewMode(ViewMode):
             qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
         
         cemu.write(asm.mnemonic)
+
+        # leave some spaces
         cemu.write((10-len(asm.mnemonic))*' ')
 
-        cemu.write(asm.restOfInstr)
-
         if asm.symbol:
-            cemu.write((25-len(asm.restOfInstr))*' ')
+            qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
+            cemu.write_c('[')
+
             qp.setPen(QtGui.QPen(QtGui.QColor('yellow'), 1, QtCore.Qt.SolidLine))
-            qp.setBrush(QtGui.QBrush(QtGui.QColor(128, 0, 0)))
-            cemu.write('->' + asm.symbol)
+            cemu.write(asm.symbol)
+
+            qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
+            cemu.write_c(']')
+
+            result = '[' + asm.symbol + ']'
+        else:
+            result = self._expandOp(asm.obj, self._opdelegate, (qp, cemu))
+
+        #print result
+        # ugly, but necessary for the cursor move to function well
+        # we save the instruction as a string here
+        asm.restOfInstr = result        
 
         if len(asm.refString) > 4:
             cemu.write((30-len(asm.restOfInstr))*' ')
