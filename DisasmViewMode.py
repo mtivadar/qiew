@@ -557,7 +557,7 @@ class DisasmViewMode(ViewMode):
 
                 if i == 1 and o.type == distorm3.OPERAND_MEMORY:
                     g = asm.operands[0]
-                    if g.size != o.size:
+                    if g.size != o.size and o.size != 0:
                         r += callback(SIZE[o.size], 'OP', *args)
                         r += callback(' ', 'OP', *args)
 
@@ -578,7 +578,7 @@ class DisasmViewMode(ViewMode):
 
             elif o.type == distorm3.OPERAND_FAR_MEMORY:
                 r += callback('%s' % hex(o.seg), 'REGISTER', *args)
-                r += callback(':', 'OP')
+                r += callback(':', 'OP', *args)
                 r += callback('%s' % hex(o.off), 'REGISTER', *args)
 
             elif (o.type == distorm3.OPERAND_MEMORY):
@@ -883,8 +883,8 @@ class DisasmViewMode(ViewMode):
                 while x >= 0 and line[x] not in self.ASMSeparators:
                     x -= 1
 
-                print line[cursorX:]
-                print line[x:]
+                #print line[cursorX:]
+                #print line[x:]
 
 
                 self.cursor.move(-(cursorX-x) + 1, 0)
