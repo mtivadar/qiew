@@ -3,6 +3,7 @@ from cemu import *
 import TextSelection
 
 from PyQt4 import QtGui, QtCore
+import PyQt4
 from time import time 
 import sys
 import threading
@@ -573,24 +574,6 @@ class BinViewMode(ViewMode):
                 self.dataModel.slidePage(-1)
                 #self.scrollPages(-1)
                 self.addop((self.scrollPages, -1))
-
-            if key == QtCore.Qt.Key_F9:
-                a,b = self.selector.getCurrentSelection()
-                import os
-                name = os.path.basename(self.dataModel.source)
-                open(name + '.drop', 'wb').write(self.dataModel.getStream(a, b))
-
-                L = ['{0:02X}'.format(o) for o in self.dataModel.getStream(a, b)]
-
-                l = len(L)
-                for i in range(l/20 + 1):
-                    L.insert((i+0)*20 + i, '\n')
-
-                open(name + '.drop' + '.hex', 'wb').write(' '.join(L))
-                print 'da'
-                #self.dataModel.slidePage(-1)
-                #self.scrollPages(-1)
-                #self.addop((self.scrollPages, -1))
 
             return True
 
