@@ -241,6 +241,11 @@ class binWidget(QtGui.QWidget):
 
                     self.update()
 
+            if key == QtCore.Qt.Key_F10:
+                import os
+                self.w = WHeaders(self, None)
+                self.w.show()
+
             if self.viewMode.handleKeyEvent(modifiers, key):
                 self.update()
 
@@ -249,6 +254,115 @@ class binWidget(QtGui.QWidget):
     def setTextViewport(self, qp):
         qp.setViewport(self.offsetWindow_h, self.offsetWindow_v, self.size().width(), self.size().height())
         qp.setWindow(0, 0, self.size().width(), self.size().height())
+
+
+
+class WHeaders(QtGui.QDialog):
+    
+    def __init__(self, parent, plugin):
+        super(WHeaders, self).__init__(parent)
+        
+        self.parent = parent
+        self.plugin = plugin
+        self.oshow = super(WHeaders, self).show
+
+        self.ui = PyQt4.uic.loadUi('dropper.ui', baseinstance=self)
+        self.ui.setWindowTitle('Dropper')
+
+        self.initUI()
+
+    def show(self):
+
+        # TODO: remember position? resize plugin windows when parent resize?
+        pwidth = self.parent.parent.size().width()
+        pheight = self.parent.parent.size().height()
+
+        width = self.ui.size().width()+15
+        height = self.ui.size().height()+15
+
+        self.setGeometry(pwidth - width - 15, pheight - height, width, height)
+        self.setFixedSize(width, height)
+
+        self.oshow()
+
+    def initUI(self):      
+
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F10"), self, self.close, self.close)
+
+        self.ui.rsel.setChecked(True)
+        self.ui.rbin.setChecked(True)
+        QtCore.QObject.connect(self.ui.ok, QtCore.SIGNAL('clicked()'), self.onClicked)
+
+    def onClicked(self):
+        
+        dataModel = self.parent.dataModel
+        name = os.path.basename(dataModel.source)
+        
+        if self.ui.rsel.isChecked():
+            if self.parent.viewMode.selector.getCurrentSelection():
+                a,b = self.parent.viewMode.selector.getCurrentSelection()
+            else:
+                a, b = None, None
+
+        if self.ui.rwf.isChecked():
+            a,b = 0, dataModel.getDataSize()
+
+        if a == None:
+            print 'no-selection'
+            self.close()
+            return
+
+        if self.ui.rbin.isChecked() == True:
+            open(name + '.drop', 'wb').write(dataModel.getStream(a, b))
+
+        if self.ui.rhex.isChecked() == True:
+            L = ['{0:02X}'.format(o) for o in dataModel.getStream(a, b)]
+
+            l = len(L)
+            for i in range(l/20 + 1):
+                L.insert((i+0)*20 + i, '\n')
+            
+            open(name + '.drop' + '.hex', 'wb').write(' '.join(L))
+
+        if self.ui.rpe.isChecked() == True:
+            text = 'MZ'
+
+            M = []
+            idx = 0
+
+            page = dataModel.getStream(a, b)
+            size =  len(dataModel.getStream(a, b))
+            while idx < size:
+                idx = page.find(text, idx, size)
+
+                if idx == -1:
+                    break
+
+                M.append(idx)
+                idx += 2
+
+
+            i = 0
+            for mz in M:
+#                print mz
+                lfanew = dataModel.getDWORD(mz + 0x3c)
+                if mz + lfanew + 4 < size:
+                    pe = dataModel.getDWORD(mz + lfanew)
+                    if pe == 0x4550:
+                        oh = mz + lfanew + 0x18
+                        if oh + 0x38 + 4 < size:
+                            sizeofimage = dataModel.getDWORD(oh + 0x38)
+                            i += 1
+                            if mz + sizeofimage < size:
+                                open(name + ".drop.{0}.mzpe".format(i), 'wb').write(dataModel.getStream(mz, mz+sizeofimage))
+                                print 'dropped from {0} to {1}'.format(hex(mz), hex(mz+sizeofimage))
+
+
+
+        self.close()
+
 
 
 
