@@ -47,9 +47,11 @@ class binWidget(QtGui.QWidget):
 #        self.multipleViewModes = [BinViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self),
 #                                  HexViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self)]
 
-        logging.basicConfig(level=logging.DEBUG)
+        logging.basicConfig(level=logging.ERROR)
         self.manager = PluginManager(categories_filter={ "FileFormat": FileFormat})
-        self.manager.setPluginPlaces([".\\plugins\\format"])
+
+        root = os.path.dirname(sys.argv[0])
+        self.manager.setPluginPlaces([os.path.join(root, 'plugins', 'format')])
         #self.manager.setPluginPlaces(["plugins"])
 
         # Load plugins
@@ -266,7 +268,9 @@ class WHeaders(QtGui.QDialog):
         self.plugin = plugin
         self.oshow = super(WHeaders, self).show
 
-        self.ui = PyQt4.uic.loadUi('dropper.ui', baseinstance=self)
+        root = os.path.dirname(sys.argv[0])
+
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'dropper.ui'), baseinstance=self)
         self.ui.setWindowTitle('Dropper')
 
         self.initUI()

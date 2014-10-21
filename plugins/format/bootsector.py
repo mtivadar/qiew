@@ -1,3 +1,5 @@
+import sys, os
+
 from FileFormat import *
 import Banners
 import pefile
@@ -6,7 +8,6 @@ from PyQt4 import QtGui, QtCore
 import PyQt4
 
 from cemu import *
-import sys
 
 import distorm3
 
@@ -156,7 +157,8 @@ class WHeaders(QtGui.QDialog):
         self.plugin = plugin
         self.oshow = super(WHeaders, self).show
 
-        self.ui = PyQt4.uic.loadUi('./plugins/format/bootsector.ui', baseinstance=self)
+        root = os.path.dirname(sys.argv[0])
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'format', 'bootsector.ui'), baseinstance=self)
 
         self.initUI()
 
