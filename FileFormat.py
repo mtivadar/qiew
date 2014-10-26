@@ -106,7 +106,7 @@ class DialogGoto(QtGui.QDialog):
                 return operators[type(node.op)](eval_(node.operand))
             elif isinstance(node, object):
                 # handle constants
-                k = str(node.id)
+                k = str(node.id).upper()
                 if k in self.konstants:
                     return self.konstants[k](k)
                 else:
@@ -130,7 +130,7 @@ class DialogGoto(QtGui.QDialog):
 
         result = self.GoTos[gotoType](result)
 
-        if result:
+        if result is not None:
             self.plugin.viewMode.goTo(result)
         
     def fa(self, offset):

@@ -572,6 +572,7 @@ class PEDialogGoto(DialogGoto):
 
         self.GoTos = {'FileAddress' : self.fa, 'VirtualAddress' : self.va, 'RVA' : self.rva}
         
+    # constants, calculate them in every way (where possible)
     def kEP(self, k):
         gtype = str(self.ui.comboBox.currentText())
 
@@ -579,7 +580,7 @@ class PEDialogGoto(DialogGoto):
             return int(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint)
 
         elif gtype == 'VirtualAddress':
-            return int(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint + self.PE.OPTIONAL_HEADER.ImageBase)
+            return int(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint + self.plugin.PE.OPTIONAL_HEADER.ImageBase)
 
         elif gtype == 'FileAddress':
             return self.plugin.PE.get_offset_from_rva(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint)
@@ -594,13 +595,14 @@ class PEDialogGoto(DialogGoto):
 
         elif gtype == 'VirtualAddress':
             offset = self.plugin.dataModel.getDataSize()
-            return self.plugin.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase
+            return self.plugin.PE.get_rva_from_offset(offset) + self.plugin.PE.OPTIONAL_HEADER.ImageBase
         elif gtype == 'RVA':
             offset = self.plugin.dataModel.getDataSize()
             return self.plugin.PE.get_rva_from_offset(offset)
         else:
             return None
 
+    # goto address type fa/va/rva
     def fa(self, result):
         return result
 
