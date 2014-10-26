@@ -23,7 +23,7 @@ class Bootsector(FileFormat):
         return False
 
     def init(self, viewMode):
-        self._viewMode = viewMode
+        self.viewMode = viewMode
 
         self.MZbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
         self.greenPen = QtGui.QPen(QtGui.QColor(255, 255, 0))
@@ -33,11 +33,11 @@ class Bootsector(FileFormat):
         self.textDecorator = HighlightASCII(self.textDecorator)
         self.textDecorator = HighlightPrefix(self.textDecorator, '\x55\xAA', brush=self.MZbrush, pen=self.greenPen)
 
-        self._viewMode.setTransformationEngine(self.textDecorator)
-        self._viewMode.selector.addSelection((446,      446+1*16, QtGui.QBrush(QtGui.QColor(125, 75, 150)), 0.8), type=TextSelection.SelectionType.PERMANENT)
-        self._viewMode.selector.addSelection((446+16,   446+2*16, QtGui.QBrush(QtGui.QColor(55, 125, 50)), 0.8), type=TextSelection.SelectionType.PERMANENT)
-        self._viewMode.selector.addSelection((446+2*16, 446+3*16, QtGui.QBrush(QtGui.QColor(125, 75, 150)), 0.8), type=TextSelection.SelectionType.PERMANENT)
-        self._viewMode.selector.addSelection((446+3*16, 446+4*16, QtGui.QBrush(QtGui.QColor(55, 125, 50)), 0.8), type=TextSelection.SelectionType.PERMANENT)
+        self.viewMode.setTransformationEngine(self.textDecorator)
+        self.viewMode.selector.addSelection((446,      446+1*16, QtGui.QBrush(QtGui.QColor(125, 75, 150)), 0.8), type=TextSelection.SelectionType.PERMANENT)
+        self.viewMode.selector.addSelection((446+16,   446+2*16, QtGui.QBrush(QtGui.QColor(55, 125, 50)), 0.8), type=TextSelection.SelectionType.PERMANENT)
+        self.viewMode.selector.addSelection((446+2*16, 446+3*16, QtGui.QBrush(QtGui.QColor(125, 75, 150)), 0.8), type=TextSelection.SelectionType.PERMANENT)
+        self.viewMode.selector.addSelection((446+3*16, 446+4*16, QtGui.QBrush(QtGui.QColor(55, 125, 50)), 0.8), type=TextSelection.SelectionType.PERMANENT)
 
         return True
 
@@ -58,6 +58,13 @@ class Bootsector(FileFormat):
             self.w.show()
         else:
             self.w.hide()
+
+    def _g_showit(self):
+        if not self.g.isVisible():
+            self.g.show()
+        else:
+            self.g.hide()
+
 
     def _writeData(self, w):
         Types = {0x07 : 'NTFS',
@@ -146,6 +153,14 @@ class Bootsector(FileFormat):
         self.w = WHeaders(parent, self)
         self._writeData(self.w)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), parent, self._showit, self._showit)
+
+        self.g = MyDialogGoto(parent, self)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)
+
+
+class MyDialogGoto(DialogGoto):
+    def fa(self, offset):
+        return offset - 0x7c00
 
 
 class WHeaders(QtGui.QDialog):

@@ -531,6 +531,13 @@ class PE(FileFormat):
         offset = self.PE.get_offset_from_rva(self.PE.OPTIONAL_HEADER.AddressOfEntryPoint)
         self._viewMode.goTo(offset)
 
+
+    def _showGoto(self):
+        if not self.dgoto.isVisible():
+            self.dgoto.show()
+        else:
+            self.dgoto.hide()
+
     def registerShortcuts(self, parent):
         self.w = WHeaders(parent, self)
         self._parent = parent
@@ -544,6 +551,76 @@ class PE(FileFormat):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)
 
         self.writeData(self.w)
+
+        self.dgoto = PEDialogGoto(parent, self)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showGoto, self._showGoto)
+
+
+# GoTo dialog (inheritance from FileFormat DialogGoto)
+class PEDialogGoto(DialogGoto):
+    def initUI(self):
+        super(PEDialogGoto, self).initUI()
+        self.ui.comboBox.clear()
+
+        # for PE we support RVA/FileAddress/VA
+        self.ui.comboBox.addItems(['RVA', 'FileAddress', 'VirtualAddress'])
+
+        # we support some konstants EP/END (end of file)
+
+        self.konstants = {'EP' : self.kEP, 
+                          'END': self.kEND}
+
+        self.GoTos = {'FileAddress' : self.fa, 'VirtualAddress' : self.va, 'RVA' : self.rva}
+        
+    def kEP(self, k):
+        gtype = str(self.ui.comboBox.currentText())
+
+        if gtype == 'RVA':
+            return int(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint)
+
+        elif gtype == 'VirtualAddress':
+            return int(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint + self.PE.OPTIONAL_HEADER.ImageBase)
+
+        elif gtype == 'FileAddress':
+            return self.plugin.PE.get_offset_from_rva(self.plugin.PE.OPTIONAL_HEADER.AddressOfEntryPoint)
+        else:
+            return None
+
+    def kEND(self, k):
+        gtype = str(self.ui.comboBox.currentText())
+
+        if gtype == 'FileAddress':
+            return self.plugin.dataModel.getDataSize()
+
+        elif gtype == 'VirtualAddress':
+            offset = self.plugin.dataModel.getDataSize()
+            return self.plugin.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase
+        elif gtype == 'RVA':
+            offset = self.plugin.dataModel.getDataSize()
+            return self.plugin.PE.get_rva_from_offset(offset)
+        else:
+            return None
+
+    def fa(self, result):
+        return result
+
+    def rva(self, rva):
+        self.PE = self.plugin.PE
+        try:
+            result = self.PE.get_offset_from_rva(rva)
+        except Exception, e:
+            return None
+
+        return result
+
+    def va(self, va):
+        self.PE = self.plugin.PE
+        try:
+            result = self.PE.get_offset_from_rva(va - self.PE.OPTIONAL_HEADER.ImageBase)
+        except Exception, e:
+            return None
+
+        return result
 
 
 class ImportsEventFilter(QtCore.QObject):

@@ -3,7 +3,10 @@ import Banners
 import pefile
 from TextDecorators import *
 from PyQt4 import QtGui, QtCore
+import PyQt4
 from cemu import *
+
+import sys, os
 
 class Binary(FileFormat):
     name = 'binary'
@@ -33,11 +36,26 @@ class Binary(FileFormat):
         return True
 
     def hintDisasm(self):
-        return distorm3.Decode32Bits
+        return distorm3.Decode16Bits
 
     def hintDisasmVA(self, offset):
         return offset
 
+    def disasmVAtoFA(self, va):
+        return va
+        
     def getBanners(self):
         return [Banners.FileAddrBanner]
-   
+
+    def registerShortcuts(self, parent):
+        self._parent = parent
+        self.w = DialogGoto(parent, self)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)
+
+    def _showit(self):
+        if not self.w.isVisible():
+            self.w.show()
+        else:
+            self.w.hide()
+
+
