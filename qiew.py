@@ -344,25 +344,54 @@ class WHeaders(QtGui.QDialog):
                 if idx == -1:
                     break
 
-                M.append(idx)
+                # skip main pe
+                if idx != 0:
+                    M.append(idx)
+
                 idx += 2
 
 
             i = 0
+
+            # for every MZ occourence
             for mz in M:
-#                print mz
+                # try to make an PE instance
+                try:
+                    pe = pefile.PE(data=str(dataModel.getStream(mz, size)))
+                except pefile.PEFormatError, e:
+                    continue
+
+
+                # iterates sections, computes sum of all raw sizes
+                raw = 0
+                for s in pe.sections:
+                    raw += s.SizeOfRawData
+
+                # drop if < selected/file size
+                if mz + raw < size:
+                    open(name + ".drop.{0}.mzpe".format(i), 'wb').write(dataModel.getStream(mz, mz + pe.OPTIONAL_HEADER.SizeOfHeaders + raw))
+                    print 'dropped from {0} to {1}'.format(hex(mz), hex(mz+raw))
+                    i += 1
+
+                """
+                print mz
                 lfanew = dataModel.getDWORD(mz + 0x3c)
                 if mz + lfanew + 4 < size:
                     pe = dataModel.getDWORD(mz + lfanew)
                     if pe == 0x4550:
                         oh = mz + lfanew + 0x18
+                        print '  ' + str(oh)
                         if oh + 0x38 + 4 < size:
+                            print 'da'
                             sizeofimage = dataModel.getDWORD(oh + 0x38)
+                            print '          ' + str(sizeofimage)
+                            print 'size   ' + str(size)
                             i += 1
                             if mz + sizeofimage < size:
+                                print 'chiar este! '
                                 open(name + ".drop.{0}.mzpe".format(i), 'wb').write(dataModel.getStream(mz, mz+sizeofimage))
                                 print 'dropped from {0} to {1}'.format(hex(mz), hex(mz+sizeofimage))
-
+                """
 
 
         self.close()
