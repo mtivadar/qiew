@@ -243,6 +243,42 @@ class binWidget(QtGui.QWidget):
 
                     self.update()
 
+            import pyperclip
+            if event.modifiers() & QtCore.Qt.ControlModifier:
+                if key == QtCore.Qt.Key_Insert:
+                    if self.viewMode.selector.getCurrentSelection():
+                        a, b = self.viewMode.selector.getCurrentSelection()
+
+                        #print a, b
+                        hx = ''
+                        for s in self.dataModel.getStream(a, b):
+                            hx += '{:02x}'.format(s)
+
+                        pyperclip.copy(hx)
+                        del pyperclip
+                        #print pyperclip.paste()
+                     #   print 'coppied'
+                
+            if event.modifiers() & QtCore.Qt.ShiftModifier:
+                if key == QtCore.Qt.Key_Insert:
+                    import re
+                    hx = pyperclip.paste()
+                    #print hx
+                    L = re.findall(r'.{1,2}', hx, re.DOTALL)
+
+                    array = ''
+                    for s in L:
+                        array += chr(int(s, 16))
+
+                    #print 'write '
+                    #print 'write'
+                    #print array
+                    self.dataModel.write(0, array)
+                    self.viewMode.draw(True)
+                    del pyperclip
+                    #print array
+
+
             if key == QtCore.Qt.Key_F10:
                 import os
                 self.w = WHeaders(self, None)
@@ -250,6 +286,7 @@ class binWidget(QtGui.QWidget):
 
             if self.viewMode.handleKeyEvent(modifiers, key):
                 self.update()
+
 
         return False
 

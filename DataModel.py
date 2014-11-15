@@ -143,19 +143,38 @@ class DataModel(object, Observer):
     @property
     def source(self):
         return ''
-        
+
+    def flush(self):
+        raise NotImplementedError('method not implemented.')
+
+    def write(self):
+        raise NotImplementedError('method not implemented.')
+
+    def close(self):
+        pass
 
 class FileDataModel(DataModel):
     def __init__(self, filename):
         self._filename = filename
 
-        f = open(filename, "r+b")
+        self._f = open(filename, "r+b")
 
         # memory-map the file, size 0 means whole file
-        mapped = mmap.mmap(f.fileno(), 0)
+        self._mapped = mmap.mmap(self._f.fileno(), 0, access=mmap.ACCESS_COPY)
 
-        super(FileDataModel, self).__init__(mapped)
+        super(FileDataModel, self).__init__(self._mapped)
 
     @property
     def source(self):
         return self._filename
+
+    def flush(self):
+        self._f.write(self._mapped)
+
+    def close(self):
+        self._mapped.close()
+        self._f.close()
+
+    def write(self, offset, stream):
+        self._mapped.seek(offset)
+        self._mapped.write(stream)
