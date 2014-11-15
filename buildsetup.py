@@ -7,7 +7,8 @@ from cx_Freeze import setup, Executable
 binincludes = ['distorm3.dll']
 binpaths = ['.']
 #includefiles = [('lib/libcrypto.so.1.0.0','lib/libcrypto.so.1.0.0'),]
-includefiles = [('plugins')]
+includefiles = [('plugins'),
+                (r'D:\Work\Work\Qiew\distorm3.dll', 'distorm3.dll')]
 
 exe = Executable(
     script="qiew.py",
@@ -17,6 +18,7 @@ setup(
     name = "Qiew",
     version = "0.1",
     description = "Binary/Hex format viewer",
-    options = {"build_exe": {'copy_dependent_files':True, 'create_shared_zip':True, 'bin_includes':binincludes, 'bin_path_includes':binpaths, 'include_files':includefiles, 'packages':["distorm3"]}},
+    # , 'packages':["distorm3"]
+    options = {"build_exe": {'copy_dependent_files':True, 'create_shared_zip':False, 'bin_includes':binincludes, 'bin_path_includes':binpaths, 'include_files':includefiles}},
     executables = [exe]
     )
