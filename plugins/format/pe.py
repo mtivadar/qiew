@@ -167,9 +167,64 @@ class PE(FileFormat):
 
 
 
-        w.ui.tableWidget.setItem(0, 0, QtGui.QTableWidgetItem('bka'))
+        
+        if self.PE.is_exe():
+            petype = 'EXE'
+        elif self.PE.is_dll():
+            petype = 'DLL'
+        elif self.PE.is_driver():
+            petype = 'Driver'
+        else:
+            petype = 'n/a'
+
+        w.ui.tableWidget.setItem(0, 0, QtGui.QTableWidgetItem(petype))
+        w.ui.tableWidget.setItem(1, 0, QtGui.QTableWidgetItem('{:,} bytes'.format(self.dataModel.getDataSize())))
+
+        # add exports
+        parent = w.ui.treeWidgetExports
+        parent.setColumnWidth(0, 300) 
+
+      
+        if hasattr(self.PE, 'DIRECTORY_ENTRY_EXPORT'):
+            try:
+                rva = self.PE.get_offset_from_rva(self.PE.DIRECTORY_ENTRY_EXPORT.struct.Name)
+
+                # very ygly, i know
+                s = ''
+                c = 'z'
+                k = 0
+                while c != '\0' and k < 50:
+                    c = chr(self.dataModel.getBYTE(rva))
+                    s += c
+                    rva += 1
+                    k += 1
 
 
+                child = QtGui.QTreeWidgetItem(None)
+                child.setText(0, s)
+
+                parent.addTopLevelItem(child)
+                parent.expandItem(child)
+                
+                for i, exp in enumerate(self.PE.DIRECTORY_ENTRY_EXPORT.symbols):
+
+                    child = QtGui.QTreeWidgetItem(None)
+
+                    if exp.name:
+                        child.setText(0, exp.name)
+                        child.setText(1, '0x{0:X}'.format(exp.address))
+
+                        #parent.topLevelItem(i).addChild(child)
+
+                        #parent.topLevelItem(i).addChild(child)
+                    
+                    parent.topLevelItem(0).addChild(child)
+
+            except Exception, e:
+                print e
+
+        
+        
         # add imports
         parent = w.ui.treeWidgetImports
         parent.setColumnWidth(0, 300) 
@@ -488,6 +543,19 @@ class PE(FileFormat):
         else:
             self.w.hide()
 
+    def shortExports(self):
+        if not self.w.isVisible():
+            self.w.show()
+            self.w.ui.tableWidget_2.setFocus()
+            self.w.ui.tableWidget_2.activateWindow()
+            self.w.ui.tabWidget.setCurrentIndex(4)
+            self.w.ui.treeWidgetExports.setFocus()
+ #           self.writeData(self.w)
+
+
+        else:
+            self.w.hide()
+
     def shortImports(self):
         if not self.w.isVisible():
             self.w.show()
@@ -545,6 +613,7 @@ class PE(FileFormat):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+V"), parent, self.shortVersionInfo, self.shortVersionInfo)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.shortHeader, self.shortHeader)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+I"), parent, self.shortImports, self.shortImports)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.shortExports, self.shortExports)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+S"), parent, self.shortSections, self.shortSections)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+D"), parent, self.shortDirectories, self.shortDirectories)
 
@@ -845,6 +914,8 @@ class PEBanner(Banners.Banner):
         self.qpix = self._getNewPixmap(self.width, self.height)
         self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))
 
+        self.DisplayTypes = ['Full', 'RVA', 'FA']
+
         initPE = True
         try:
             self.PE = pefile.PE(data=dataModel.getData())
@@ -867,6 +938,10 @@ class PEBanner(Banners.Banner):
 
         if initPE == False:
             return
+
+    def changeDisplay(self):
+        self.DisplayTypes = self.DisplayTypes[1:] + [self.DisplayTypes[0]]
+
 
     def getOrientation(self):
         return Banners.Orientation.Left
@@ -906,7 +981,13 @@ class PEBanner(Banners.Banner):
             if section:
                 s = section.Name.replace('\0', ' ')
 
-            sOff = '{0:08x}'.format(self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase)
+            if self.DisplayTypes[0] == 'FA':
+                sOff = ' {0:08x}'.format(offset)
+            elif self.DisplayTypes[0] == 'RVA':
+                sOff = ' {0:08x}'.format(self.PE.get_rva_from_offset(offset))
+            else:
+                sOff = '{0:08x}'.format(self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase)
+
             sDisplay = '{0} {1}'.format(s, sOff)
             qp.drawText(0+5, (i+1) * self.fontHeight, sDisplay)
             offset += columns
