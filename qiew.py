@@ -284,6 +284,10 @@ class binWidget(QtGui.QWidget):
                 self.w = WHeaders(self, None)
                 self.w.show()
 
+            if key == QtCore.Qt.Key_F3:
+                for b in self.Banners.banners():
+                    b.changeDisplay()
+
             if self.viewMode.handleKeyEvent(modifiers, key):
                 self.update()
 
