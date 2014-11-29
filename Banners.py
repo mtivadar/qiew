@@ -20,6 +20,8 @@ class Banner(object):
     def getDesiredGeometry(self):
         NotImplementedError('method not implemented.')
 
+    def changeDisplay(self):
+        return
 
 Orientation = enum(Left=0, Bottom=1)
 
@@ -32,6 +34,9 @@ class Banners:
     def add(self, banner):
         self._Banners.append(banner)
 
+    def banners(self):
+        return self._Banners
+        
     def getLeftOffset(self):
         offset = 0
         for banner in self._Banners:
@@ -79,7 +84,6 @@ class Banners:
                 banner.draw()
                 qp.drawPixmap(offsetLeft, offsetBottom, banner.getPixmap())
                 offsetBottom += banner.getDesiredGeometry() + self.separatorBottom
-
 
 
 
