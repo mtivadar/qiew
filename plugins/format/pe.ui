@@ -23,7 +23,7 @@
     </rect>
    </property>
    <property name="currentIndex">
-    <number>0</number>
+    <number>5</number>
    </property>
    <widget class="QWidget" name="tab">
     <attribute name="title">
@@ -213,6 +213,34 @@
     <attribute name="title">
      <string>&amp;Exports</string>
     </attribute>
+    <widget class="QTreeWidget" name="treeWidgetExports">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>791</width>
+       <height>420</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <family>Terminus</family>
+       <pointsize>10</pointsize>
+       <weight>75</weight>
+       <bold>true</bold>
+      </font>
+     </property>
+     <column>
+      <property name="text">
+       <string>Name</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>RVA</string>
+      </property>
+     </column>
+    </widget>
    </widget>
    <widget class="QWidget" name="tab_2">
     <attribute name="title">
@@ -224,9 +252,14 @@
        <x>0</x>
        <y>10</y>
        <width>351</width>
-       <height>211</height>
+       <height>181</height>
       </rect>
      </property>
+     <row>
+      <property name="text">
+       <string>PE Type</string>
+      </property>
+     </row>
      <row>
       <property name="text">
        <string>Size</string>
@@ -235,11 +268,6 @@
      <row>
       <property name="text">
        <string>Overlay</string>
-      </property>
-     </row>
-     <row>
-      <property name="text">
-       <string>Type</string>
       </property>
      </row>
      <row>
@@ -257,7 +285,7 @@
        <string>Value</string>
       </property>
      </column>
-     <item row="0" column="0">
+     <item row="1" column="0">
       <property name="text">
        <string/>
       </property>
@@ -267,9 +295,9 @@
      <property name="geometry">
       <rect>
        <x>0</x>
-       <y>230</y>
+       <y>210</y>
        <width>611</width>
-       <height>241</height>
+       <height>261</height>
       </rect>
      </property>
      <property name="sizePolicy">
