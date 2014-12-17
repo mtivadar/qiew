@@ -1,7 +1,7 @@
 #Qiew - Hex/File format viewer
 
 ## Portable Executable (PE) file viewer
-Designed to be usefull in reverse engineering malware.
+Designed to be useful in reverse engineering malware.
 
 features: highlights strings/calls/mz-pe very useful in malware analysis.
 
