@@ -1,0 +1,3 @@
+distorm3==3-sdist
+pefile
+pyperclip
