@@ -110,7 +110,7 @@ class HexViewMode(ViewMode):
         self.width = width - width%self.fontWidth
         self.height = height - height%self.fontHeight
         self.computeTextArea()
-        self.qpix = self._getNewPixmap(self.width, self.height)
+        self.qpix = self._getNewPixmap(self.width, self.height + self.SPACER)
         self.refresh = True
 
     def changeHexColumns(self):
@@ -144,7 +144,7 @@ class HexViewMode(ViewMode):
         self.scroll(0, number*self.ROWS)
 
     def drawAdditionals(self):
-        self.newPix = self._getNewPixmap(self.width, self.height)
+        self.newPix = self._getNewPixmap(self.width, self.height + self.SPACER)
         qp = QtGui.QPainter()
         qp.begin(self.newPix)
         qp.drawPixmap(0, 0, self.qpix)
@@ -175,9 +175,9 @@ class HexViewMode(ViewMode):
         gap = 5
 
         # hex part
-        self.qpix.scroll(dx*3*self.fontWidth, 0, QtCore.QRect(0, 0, self.COLUMNS*3*self.fontWidth, self.ROWS*self.fontHeight))
+        self.qpix.scroll(dx*3*self.fontWidth, 0, QtCore.QRect(0, 0, self.COLUMNS*3*self.fontWidth, self.ROWS*self.fontHeight + self.SPACER))
         # text part
-        self.qpix.scroll(dx*self.fontWidth, 0, QtCore.QRect((self.COLUMNS*3 + gap)*self.fontWidth , 0, self.COLUMNS*self.fontWidth, self.ROWS*self.fontHeight))        
+        self.qpix.scroll(dx*self.fontWidth, 0, QtCore.QRect((self.COLUMNS*3 + gap)*self.fontWidth , 0, self.COLUMNS*self.fontWidth, self.ROWS*self.fontHeight + self.SPACER))
 
         qp = QtGui.QPainter()
         
@@ -193,14 +193,14 @@ class HexViewMode(ViewMode):
         textBegining = self.COLUMNS*3 + gap
         if dx < 0:
             # hex
-            qp.fillRect((self.COLUMNS - 1*factor)*3*self.fontWidth, 0, factor * self.fontWidth * 3, self.ROWS*self.fontHeight, self.backgroundBrush)
+            qp.fillRect((self.COLUMNS - 1*factor)*3*self.fontWidth, 0, factor * self.fontWidth * 3, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
             # text
-            qp.fillRect((textBegining + self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth+trail, self.ROWS*self.fontHeight, self.backgroundBrush)
+            qp.fillRect((textBegining + self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth+trail, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
         if dx > 0:
             # hex
-            qp.fillRect(0, 0, factor * 3 * self.fontWidth, self.ROWS*self.fontHeight, self.backgroundBrush)
+            qp.fillRect(0, 0, factor * 3 * self.fontWidth, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
             # text
-            qp.fillRect(textBegining*self.fontWidth - trail, 0, factor * self.fontWidth + trail, self.ROWS*self.fontHeight, self.backgroundBrush)            
+            qp.fillRect(textBegining*self.fontWidth - trail, 0, factor * self.fontWidth + trail, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.CON_COLUMNS)
 
@@ -256,7 +256,7 @@ class HexViewMode(ViewMode):
 
         if dy < 0:
             cemu.gotoXY(0, self.ROWS - factor)            
-            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.CON_COLUMNS, factor * self.fontHeight, self.backgroundBrush)
+            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.CON_COLUMNS, factor * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         if dy > 0:
             cemu.gotoXY(0, 0)            
@@ -336,7 +336,7 @@ class HexViewMode(ViewMode):
     def drawTextMode(self, qp):
        
         # draw background
-        qp.fillRect(0, 0, self.CON_COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight, self.backgroundBrush)
+        qp.fillRect(0, 0, self.CON_COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)

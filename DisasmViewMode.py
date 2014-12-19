@@ -177,7 +177,7 @@ class DisasmViewMode(ViewMode):
         self.width = width - width%self.fontWidth
         self.height = height - height%self.fontHeight
         self.computeTextArea()
-        self.qpix = self._getNewPixmap(self.width, self.height)
+        self.qpix = self._getNewPixmap(self.width, self.height + self.SPACER)
         self.refresh = True
 
     def computeTextArea(self):
@@ -440,7 +440,7 @@ class DisasmViewMode(ViewMode):
         self.drawAdditionals()
 
     def drawAdditionals(self):
-        self.newPix = self._getNewPixmap(self.width, self.height)
+        self.newPix = self._getNewPixmap(self.width, self.height + self.SPACER)
         qp = QtGui.QPainter()
         qp.begin(self.newPix)
         qp.setWindow(-50, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight)

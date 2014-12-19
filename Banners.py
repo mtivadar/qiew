@@ -26,6 +26,8 @@ class Banner(object):
 Orientation = enum(Left=0, Bottom=1)
 
 class Banners:
+    BOTTOM_SEPARATOR = 5
+
     def __init__(self):
         self._Banners = []
         self.separatorBottom = 5
@@ -77,7 +79,7 @@ class Banners:
                 offsetLeft += banner.getDesiredGeometry() + self.separatorLeft
 
         # initial offset + all offsets from all banners. We are doing this because Y growns down
-        offsetBottom = maxY - self.getBottomOffset()
+        offsetBottom = maxY - self.getBottomOffset() + self.BOTTOM_SEPARATOR
 
         for banner in self._Banners:
             if banner.getOrientation() == Orientation.Bottom:

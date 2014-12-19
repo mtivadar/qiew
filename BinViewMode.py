@@ -91,7 +91,7 @@ class BinViewMode(ViewMode):
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):
-        self.newPix = self._getNewPixmap(self.width, self.height)
+        self.newPix = self._getNewPixmap(self.width, self.height + self.SPACER)
         qp = QtGui.QPainter()
         qp.begin(self.newPix)
         qp.drawPixmap(0, 0, self.qpix)
@@ -178,9 +178,9 @@ class BinViewMode(ViewMode):
 
         factor = abs(dx)
         if dx < 0:
-            qp.fillRect((self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth, self.ROWS*self.fontHeight, self.backgroundBrush)
+            qp.fillRect((self.COLUMNS - 1*factor)*self.fontWidth, 0, factor * self.fontWidth, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
         if dx > 0:
-            qp.fillRect(0, 0, factor * self.fontWidth, self.ROWS*self.fontHeight, self.backgroundBrush)
+            qp.fillRect(0, 0, factor * self.fontWidth, self.ROWS*self.fontHeight + self.SPACER, self.backgroundBrush)
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
@@ -236,9 +236,11 @@ class BinViewMode(ViewMode):
         qp.setFont(self.font)
         qp.setPen(self.textPen)
 
+        # TODO: while the characters are not all the same hight, when scrolling up on y axis, trails remains. We should also erase a Rect with SPACER in hight
+        #       same problem when scrolling up.             
         factor = abs(dy)
         if dy < 0:
-            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
+            qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.COLUMNS, factor * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         if dy > 0:
             qp.fillRect(0, 0, self.fontWidth*self.COLUMNS, factor * self.fontHeight, self.backgroundBrush)
@@ -348,12 +350,12 @@ class BinViewMode(ViewMode):
         self.width = width - width%self.fontWidth
         self.height = height - height%self.fontHeight
         self.computeTextArea()
-        self.qpix = self._getNewPixmap(self.width, self.height)
+        self.qpix = self._getNewPixmap(self.width, self.height + self.SPACER)
         self.refresh = True
 
     def drawTextMode(self, qp):
         # draw background
-        qp.fillRect(0, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight, self.backgroundBrush)
+        qp.fillRect(0, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)
