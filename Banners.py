@@ -115,7 +115,7 @@ class FileAddrBanner(Banner):
         return Orientation.Left
 
     def getDesiredGeometry(self):
-        return 75
+        return 10 * self.fontWidth
 
     def setViewMode(self, viewMode):
         self.viewMode = viewMode
