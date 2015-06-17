@@ -222,10 +222,20 @@ class BottomBanner(Banner):
         cemu.writeAt(35, 0, sq)
         cemu.writeAt(62, 0, sb)
 
-        qp.drawLine(120, 0, 120, 50)
-        qp.drawLine(270, 0, 270, 50)
-        qp.drawLine(480, 0, 480, 50)
-        qp.drawLine(570, 0, 570, 50)
+        qp.drawLine(15 * self.fontWidth + 5, 0, 15 * self.fontWidth + 5, 50)
+        qp.drawLine(33 * self.fontWidth + 5, 0, 33 * self.fontWidth + 5, 50)
+        qp.drawLine(59 * self.fontWidth + 5, 0, 59 * self.fontWidth + 5, 50)
+        qp.drawLine(71 * self.fontWidth + 5, 0, 71 * self.fontWidth + 5, 50)
+
+        """
+        qp.drawLine(self.fontWidth*(len(pos) + 1) + 15, 0, self.fontWidth*(len(pos) + 1) + 15, 50)
+        qp.drawLine(self.fontWidth*(len(pos + sd) + 1) + 3*15, 0, self.fontWidth*(len(pos + sd) + 1) + 3*15, 50)
+        qp.drawLine(self.fontWidth*(len(pos + sd + sq) + 1) + 5*15, 0, self.fontWidth*(len(pos + sd + sq) + 1) + 5*15, 50)
+        qp.drawLine(self.fontWidth*(len(pos + sd + sq + sb) + 1) + 8*15, 0, self.fontWidth*(len(pos + sd + sq + sb) + 1) + 8*15, 50)
+        """
+        #qp.drawLine(270, 0, 270, 50)
+        #qp.drawLine(480, 0, 480, 50)
+        #qp.drawLine(570, 0, 570, 50)
         """
         # position
         qp.drawText(0 + 5, self.fontHeight, pos)
@@ -261,3 +271,4 @@ class BottomBanner(Banner):
         self.width = width
         self.height = height
         self.qpix = self._getNewPixmap(self.width, self.height)
+                                           

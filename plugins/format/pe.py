@@ -947,7 +947,7 @@ class PEBanner(Banners.Banner):
         return Banners.Orientation.Left
 
     def getDesiredGeometry(self):
-        return 160
+        return self.fontWidth*20# 160
 
     def setViewMode(self, viewMode):
         self.viewMode = viewMode
