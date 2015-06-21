@@ -15,6 +15,9 @@ import distorm3
 class PE(FileFormat):
     name = 'pe'
     priority = 5
+
+    DisplayTypes = ['VA', 'RVA', 'FA']
+
     def recognize(self, dataModel):
         self.dataModel = dataModel
 
@@ -28,6 +31,12 @@ class PE(FileFormat):
 
     def getVA(self, offset):
         return self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase
+
+    def changeAddressMode(self):
+        self.DisplayTypes = self.DisplayTypes[1:] + [self.DisplayTypes[0]]
+
+    def getAddressMode(self):
+        return self.DisplayTypes[0]
 
     def init(self, viewMode):
         self._viewMode = viewMode
@@ -133,7 +142,8 @@ class PE(FileFormat):
 
 
     def getBanners(self):
-        return [PEBanner, PEHeaderBanner]
+        self.banners = [PEBanner(self.dataModel, self.viewMode, self), PEHeaderBanner(self.dataModel, self.viewMode, self)]
+        return self.banners
    
     def writeData(self, w):
 
@@ -600,6 +610,11 @@ class PE(FileFormat):
         self._viewMode.goTo(offset)
 
 
+    def F3(self):
+        self.changeAddressMode()
+
+        self._parent.update()
+
     def _showGoto(self):
         if not self.dgoto.isVisible():
             self.dgoto.show()
@@ -618,6 +633,8 @@ class PE(FileFormat):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+D"), parent, self.shortDirectories, self.shortDirectories)
 
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)
 
         self.writeData(self.w)
 
@@ -905,6 +922,10 @@ class WHeaders(QtGui.QDialog):
 
 
 class PEHeaderBanner(Banners.TopBanner):
+    def __init__(self, dataModel, viewMode, peplugin):
+        self.peplugin = peplugin
+        super(PEHeaderBanner, self).__init__(dataModel, viewMode)
+
     def draw(self):
         qp = QtGui.QPainter()
         qp.begin(self.qpix)
@@ -916,7 +937,18 @@ class PEHeaderBanner(Banners.TopBanner):
         cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
 
         cemu.writeAt(1, 0, 'Name')
-        cemu.writeAt(10, 0, 'FileAddr')
+
+        displayType = self.peplugin.getAddressMode()
+
+        offset = 10
+        if displayType == 'FA':
+            offset = 13
+        if displayType == 'RVA':
+            offset = 13
+        if displayType == 'VA':
+            offset = 13
+
+        cemu.writeAt(offset, 0, displayType)
 
         offset = 21 # for PE plugin !
 
@@ -928,7 +960,7 @@ class PEHeaderBanner(Banners.TopBanner):
         qp.end()
 
 class PEBanner(Banners.Banner):
-    def __init__(self, dataModel, viewMode):
+    def __init__(self, dataModel, viewMode, peplugin):
         self.width = 0
         self.height = 0
         self.dataModel = dataModel
@@ -936,7 +968,7 @@ class PEBanner(Banners.Banner):
         self.qpix = self._getNewPixmap(self.width, self.height)
         self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))
 
-        self.DisplayTypes = ['Full', 'RVA', 'FA']
+        self.peplugin = peplugin
 
         initPE = True
         try:
@@ -960,10 +992,6 @@ class PEBanner(Banners.Banner):
 
         if initPE == False:
             return
-
-    def changeDisplay(self):
-        self.DisplayTypes = self.DisplayTypes[1:] + [self.DisplayTypes[0]]
-
 
     def getOrientation(self):
         return Banners.Orientation.Left
@@ -1003,9 +1031,10 @@ class PEBanner(Banners.Banner):
             if section:
                 s = section.Name.replace('\0', ' ')
 
-            if self.DisplayTypes[0] == 'FA':
+            displayType = self.peplugin.getAddressMode()
+            if displayType == 'FA':
                 sOff = ' {0:08x}'.format(offset)
-            elif self.DisplayTypes[0] == 'RVA':
+            elif displayType == 'RVA':
                 sOff = ' {0:08x}'.format(self.PE.get_rva_from_offset(offset))
             else:
                 sOff = '{0:08x}'.format(self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase)

@@ -107,10 +107,11 @@ class binWidget(QtGui.QWidget):
 
         self.initUI()
         
-        for banner in po.getBanners():
-            self.Banners.add(banner(self.dataModel, self.viewMode))
-        
         po.init(self.viewMode)
+        for banner in po.getBanners():
+            #self.Banners.add(banner(self.dataModel, self.viewMode))
+            self.Banners.add(banner)
+        
         po.registerShortcuts(self)
         self.po = po
 
@@ -285,10 +286,6 @@ class binWidget(QtGui.QWidget):
                 import os
                 self.w = WHeaders(self, None)
                 self.w.show()
-
-            if key == QtCore.Qt.Key_F3:
-                for b in self.Banners.banners():
-                    b.changeDisplay()
 
             if self.viewMode.handleKeyEvent(modifiers, key):
                 self.update()

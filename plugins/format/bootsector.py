@@ -51,7 +51,7 @@ class Bootsector(FileFormat):
         return va - 0x7c00
 
     def getBanners(self):
-        return [BootBanner, Banners.TopBanner]
+        return [Banners.FileAddrBanner(self.dataModel, self.viewMode), Banners.TopBanner(self.dataModel, self.viewMode)]
 
     def _showit(self):
         if not self.w.isVisible():
