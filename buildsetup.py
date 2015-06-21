@@ -8,7 +8,7 @@ binincludes = ['distorm3.dll']
 binpaths = ['.']
 #includefiles = [('lib/libcrypto.so.1.0.0','lib/libcrypto.so.1.0.0'),]
 includefiles = [('plugins'),
-                (r'D:\Work\Work\Qiew\distorm3.dll', 'distorm3.dll')]
+                (r'C:\Tools\Work\Work\Qiew\distorm3.dll', 'distorm3.dll')]
 
 exe = Executable(
     script="qiew.py",
