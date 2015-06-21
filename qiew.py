@@ -342,8 +342,10 @@ class WHeaders(QtGui.QDialog):
     def onClicked(self):
         
         dataModel = self.parent.dataModel
-        name = os.path.basename(dataModel.source)
-        
+        #name = os.path.basename(dataModel.source)
+        # we want fullpath
+        name = dataModel.source
+
         if self.ui.rsel.isChecked():
             if self.parent.viewMode.selector.getCurrentSelection():
                 a,b = self.parent.viewMode.selector.getCurrentSelection()
