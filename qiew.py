@@ -185,10 +185,12 @@ class binWidget(QtGui.QWidget):
     def _resize(self):
 
         self.Banners.resize(self.size().width() - self.offsetWindow_h, self.size().height() - self.offsetWindow_v)
-        
+
+        # compute space ocupated by banners        
         offsetLeft = self.offsetWindow_h + self.Banners.getLeftOffset()
         offsetBottom   = self.offsetWindow_v + self.Banners.getBottomOffset() + self.Banners.getTopOffset()
         
+        # resize window, substract space ocupated by banners
         self.viewMode.resize(self.size().width() - offsetLeft, self.size().height() - offsetBottom)
 
     # event handlers

@@ -72,7 +72,7 @@ class Banners:
         for banner in self._Banners:
             # banners are not resizeable actually
             if banner.getOrientation() == Orientation.Left:
-                banner.resize(banner.getDesiredGeometry(), height - limit)
+                banner.resize(banner.getDesiredGeometry(), height - limit + 4) # +4 , make to look nice
 
             if banner.getOrientation() == Orientation.Bottom:
                 banner.resize(width, banner.getDesiredGeometry())
