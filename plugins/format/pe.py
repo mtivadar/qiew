@@ -1038,6 +1038,8 @@ class PEBanner(Banners.Banner):
                 sOff = ' {0:08x}'.format(self.PE.get_rva_from_offset(offset))
             else:
                 sOff = '{0:08x}'.format(self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase)
+                if len(sOff) == 8:
+                    sOff = ' ' + sOff
 
             sDisplay = '{0} {1}'.format(s, sOff)
             qp.drawText(0+5, (i+1) * self.fontHeight, sDisplay)

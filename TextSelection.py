@@ -91,9 +91,15 @@ class Selection(object):
             else:
                 return b, a
         else:
+            for s in self.Selections:
+                u, v, b, o = s
+                # pass auf! , in theory we could have more then one normal selection
+                # so here the first one is returned.
+                # but currently, by design we could only have one NORMAL selection
+                return u, v
 
-            if self.last:
-                return self.last
+            #if self.last:
+            #    return self.last
 
         return None
     
