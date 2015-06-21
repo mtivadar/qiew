@@ -91,6 +91,8 @@ class binWidget(QtGui.QWidget):
         self.Banners = Banners()
 
         self.Banners.add(BottomBanner(self.dataModel, self.viewMode))
+#        self.Banners.add(TopBanner(self.dataModel, self.viewMode))
+
 
         #self.Banners.add(self.banner)
 #        self.filebanner = FileAddrBanner(self.dataModel, self.viewMode)
@@ -184,7 +186,7 @@ class binWidget(QtGui.QWidget):
         self.Banners.resize(self.size().width() - self.offsetWindow_h, self.size().height() - self.offsetWindow_v)
         
         offsetLeft = self.offsetWindow_h + self.Banners.getLeftOffset()
-        offsetBottom   = self.offsetWindow_v + self.Banners.getBottomOffset()
+        offsetBottom   = self.offsetWindow_v + self.Banners.getBottomOffset() + self.Banners.getTopOffset()
         
         self.viewMode.resize(self.size().width() - offsetLeft, self.size().height() - offsetBottom)
 
@@ -199,7 +201,7 @@ class binWidget(QtGui.QWidget):
         qp.setOpacity(1)
 
         offsetLeft = self.offsetWindow_h + self.Banners.getLeftOffset()
-        offsetBottom   = self.offsetWindow_v #+ self.Banners.getBottomOffset()
+        offsetBottom   = self.offsetWindow_v + self.Banners.getTopOffset()
 
         #self.viewMode.draw2(qp, refresh=True)
         #start = time()

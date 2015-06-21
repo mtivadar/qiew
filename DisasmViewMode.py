@@ -1069,3 +1069,6 @@ class DisasmViewMode(ViewMode):
 
     def addop(self, t):
         self.Ops.append(t)
+
+    def getHeaderInfo(self):
+        return 'Disasm listing'

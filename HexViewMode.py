@@ -597,3 +597,10 @@ class HexViewMode(ViewMode):
 
     def addop(self, t):
         self.Ops.append(t)
+
+    def getHeaderInfo(self):
+        s = ''
+        for i in range(self.HexColumns[self.idxHexColumns]):
+            s += '{0} '.format('{0:x}'.format(i).zfill(2))
+
+        return s

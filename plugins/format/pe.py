@@ -133,7 +133,7 @@ class PE(FileFormat):
 
 
     def getBanners(self):
-        return [PEBanner]
+        return [PEBanner, PEHeaderBanner]
    
     def writeData(self, w):
 
@@ -904,6 +904,28 @@ class WHeaders(QtGui.QDialog):
 #        self.setWindowFlags()
 
 
+class PEHeaderBanner(Banners.TopBanner):
+    def draw(self):
+        qp = QtGui.QPainter()
+        qp.begin(self.qpix)
+
+        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.setPen(self.textPen)
+        qp.setFont(self.font)
+
+        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+
+        cemu.writeAt(1, 0, 'Name')
+        cemu.writeAt(10, 0, 'FileAddr')
+
+        offset = 21 # for PE plugin !
+
+        text = ''
+        text = self.viewMode.getHeaderInfo()
+
+        cemu.writeAt(offset, 0, text)
+        
+        qp.end()
 
 class PEBanner(Banners.Banner):
     def __init__(self, dataModel, viewMode):

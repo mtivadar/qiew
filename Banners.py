@@ -23,7 +23,7 @@ class Banner(object):
     def changeDisplay(self):
         return
 
-Orientation = enum(Left=0, Bottom=1)
+Orientation = enum(Left=0, Bottom=1, Top=2)
 
 class Banners:
     BOTTOM_SEPARATOR = 5
@@ -32,6 +32,7 @@ class Banners:
         self._Banners = []
         self.separatorBottom = 5
         self.separatorLeft = 5
+        self.separatorTop = 5
 
     def add(self, banner):
         self._Banners.append(banner)
@@ -57,8 +58,17 @@ class Banners:
 
         return offset
 
+    def getTopOffset(self):
+        offset = 0
+        for banner in self._Banners:
+            if banner.getOrientation() == Orientation.Top:
+                offset += banner.getDesiredGeometry()
+                offset += self.separatorTop
+
+        return offset
+
     def resize(self, width, height):
-        limit = self.getBottomOffset()
+        limit = self.getBottomOffset() + self.getTopOffset()
         for banner in self._Banners:
             # banners are not resizeable actually
             if banner.getOrientation() == Orientation.Left:
@@ -67,11 +77,21 @@ class Banners:
             if banner.getOrientation() == Orientation.Bottom:
                 banner.resize(width, banner.getDesiredGeometry())
 
+            if banner.getOrientation() == Orientation.Top:
+                banner.resize(width, banner.getDesiredGeometry())
+
     def setViewMode(self, viewMode):
         for banner in self._Banners:
             banner.setViewMode(viewMode)
 
     def draw(self, qp, offsetLeft, offsetBottom, maxY):
+
+        for banner in self._Banners:
+            if banner.getOrientation() == Orientation.Top:
+                banner.draw()
+                qp.drawPixmap(offsetLeft-4, offsetBottom, banner.getPixmap())
+                offsetBottom += banner.getDesiredGeometry() + self.separatorLeft
+
         for banner in self._Banners:
             if banner.getOrientation() == Orientation.Left:
                 banner.draw()
@@ -181,7 +201,7 @@ class BottomBanner(Banner):
         return Orientation.Bottom
 
     def getDesiredGeometry(self):
-        return 50
+        return 60
 
     def setViewMode(self, viewMode):
         self.viewMode = viewMode
@@ -271,4 +291,72 @@ class BottomBanner(Banner):
         self.width = width
         self.height = height
         self.qpix = self._getNewPixmap(self.width, self.height)
-                                           
+
+
+class TopBanner(Banner):
+    def __init__(self, dataModel, viewMode):
+        self.width = 0
+        self.height = 0
+        self.dataModel = dataModel
+        self.viewMode = viewMode
+
+        self.qpix = self._getNewPixmap(self.width, self.height)
+        self.backgroundBrush = QtGui.QBrush(QtGui.QColor(0, 0, 128))        
+        
+
+        # text font
+        self.font = QtGui.QFont('Consolas', 11, QtGui.QFont.Light)
+
+        # font metrics. assume font is monospaced
+        self.font.setKerning(False)
+        self.font.setFixedPitch(True)
+        fm = QtGui.QFontMetrics(self.font)
+        self.fontWidth  = fm.width('a')
+        self.fontHeight = fm.height()
+
+        self.textPen = QtGui.QPen(QtGui.QColor(255, 255, 0), 0, QtCore.Qt.SolidLine)
+
+    def getOrientation(self):
+        return Orientation.Top
+
+    def getDesiredGeometry(self):
+        return 26#22
+
+    def setViewMode(self, viewMode):
+        self.viewMode = viewMode
+
+    def draw(self):
+        # i don't really like this in terms of arhitecture. We have
+        # artificially introduced getHeaderInfo() in Views. Then we had one top
+        # banner implemented per plugin. I will think to a better solution
+
+        qp = QtGui.QPainter()
+        qp.begin(self.qpix)
+
+        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.setPen(self.textPen)
+        qp.setFont(self.font)
+
+        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+
+        cemu.writeAt(1, 0, 'FileAddr')
+
+        offset = 11
+
+        text = self.viewMode.getHeaderInfo()
+
+        cemu.writeAt(offset, 0, text)
+        
+        qp.end()
+
+    def getPixmap(self):
+        return self.qpix
+
+    def _getNewPixmap(self, width, height):
+        return QtGui.QPixmap(width, height)
+
+    def resize(self, width, height):
+        self.width = width
+        self.height = height
+        self.qpix = self._getNewPixmap(self.width, self.height)
+                                                                                      

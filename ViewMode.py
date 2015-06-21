@@ -99,3 +99,6 @@ class ViewMode(Observable):
             return bytearray(data[dataOffset:dataOffset + rows*cols*pageOffset])
 
         return bytearray(data[dataOffset:dataOffset + rows*cols])
+
+    def getHeaderInfo(self):
+        return ''

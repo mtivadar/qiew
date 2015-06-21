@@ -593,3 +593,6 @@ class BinViewMode(ViewMode):
 
     def addop(self, t):
         self.Ops.append(t)
+
+    def getHeaderInfo(self):
+        return 'Binary'
