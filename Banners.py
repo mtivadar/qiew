@@ -305,7 +305,7 @@ class TopBanner(Banner):
         
 
         # text font
-        self.font = QtGui.QFont('Consolas', 11, QtGui.QFont.Light)
+        self.font = QtGui.QFont('Terminus', 11, QtGui.QFont.Bold)
 
         # font metrics. assume font is monospaced
         self.font.setKerning(False)
