@@ -60,6 +60,12 @@ class PE(FileFormat):
         if start:
             self.textDecorator = RangePen(self.textDecorator, start, start + self.dataModel.getDataSize(), QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine), ignoreHighlights=False)
 
+        for d in self.PE.OPTIONAL_HEADER.DATA_DIRECTORY:
+            if d.Size != 0:
+                if d.name == 'IMAGE_DIRECTORY_ENTRY_IAT':
+                    start = self.PE.get_offset_from_rva(d.VirtualAddress)
+                    size  = d.Size
+                    self.textDecorator = RangePen(self.textDecorator, start, start + size, QtGui.QPen(QtGui.QColor(0, 200, 0), 0, QtCore.Qt.SolidLine), ignoreHighlights=False)                    
 
         self.viewMode.setTransformationEngine(self.textDecorator)
         
