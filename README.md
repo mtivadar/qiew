@@ -12,7 +12,7 @@ disassembler + referenced strings, API calls
 ## Releases/Binaries
 Binaries available for Windows AMD64, built with cx_Freeze
 
-## Installation
+## Installation from sources
 If you have a C compiler run 
 ```
 pip install -r requirements.txt
