@@ -9,6 +9,9 @@ disassembler + referenced strings, API calls
 
 "highlight all" for current text selection.
 
+## Releases/Binaries
+Binaries available for Windows AMD64, built with cx_Freeze
+
 ## Installation
 If you have a C compiler run 
 ```
