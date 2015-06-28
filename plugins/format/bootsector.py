@@ -14,6 +14,14 @@ import distorm3
 class Bootsector(FileFormat):
     name = 'bootsector'
     priority = 4
+    DisplayTypes = ['MemAddr', 'FileAddr']
+
+
+    def changeAddressMode(self):
+        self.DisplayTypes = self.DisplayTypes[1:] + [self.DisplayTypes[0]]
+
+    def getAddressMode(self):
+        return self.DisplayTypes[0]
 
     def recognize(self, dataModel):
         self.dataModel = dataModel
@@ -51,7 +59,7 @@ class Bootsector(FileFormat):
         return va - 0x7c00
 
     def getBanners(self):
-        return [BootBanner(self.dataModel, self.viewMode), Banners.TopBanner(self.dataModel, self.viewMode)]
+        return [BootBanner(self.dataModel, self.viewMode, self), BootHeaderBanner(self.dataModel, self.viewMode, self)]
 
     def _showit(self):
         if not self.w.isVisible():
@@ -64,6 +72,11 @@ class Bootsector(FileFormat):
             self.g.show()
         else:
             self.g.hide()
+
+    def F3(self):
+        self.changeAddressMode()
+
+        self._parent.update()
 
 
     def _writeData(self, w):
@@ -156,6 +169,7 @@ class Bootsector(FileFormat):
 
         self.g = MyDialogGoto(parent, self)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)
 
 
 class MyDialogGoto(DialogGoto):
@@ -198,11 +212,56 @@ class WHeaders(QtGui.QDialog):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), self, self.close, self.close)
 
 
+class BootHeaderBanner(Banners.TopBanner):
+    def __init__(self, dataModel, viewMode, plugin):
+        self.plugin = plugin
+        super(BootHeaderBanner, self).__init__(dataModel, viewMode)
+
+    def draw(self):
+        qp = QtGui.QPainter()
+        qp.begin(self.qpix)
+
+        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.setPen(self.textPen)
+        qp.setFont(self.font)
+
+        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+
+        displayType = self.plugin.getAddressMode()
+
+        offset = 1
+        if displayType == 'MemAddr':
+            offset = 2
+        if displayType == 'FileAddr':
+            offset = 1
+
+        cemu.writeAt(offset, 0, displayType)
+
+        offset = 11
+
+        text = ''
+        text = self.viewMode.getHeaderInfo()
+
+        cemu.writeAt(offset, 0, text)
+        
+        qp.end()
+
+
 class BootBanner(Banners.FileAddrBanner):
+    def __init__(self, dataModel, viewMode, plugin):
+        self.plugin = plugin
+        super(BootBanner, self).__init__(dataModel, viewMode)
+
     def draw(self):
         qp = QtGui.QPainter()
 
-        offset = 0x7c00 + self.viewMode.getPageOffset()
+        displayType = self.plugin.getAddressMode()
+
+        if displayType == 'MemAddr':
+            offset = 0x7c00 + self.viewMode.getPageOffset()
+        else:
+            offset = self.viewMode.getPageOffset()
+
         columns, rows = self.viewMode.getGeometry()
 
         qp.begin(self.qpix)

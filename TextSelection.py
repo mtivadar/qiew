@@ -287,12 +287,12 @@ class HexSelection(Selection):
             if d0/cols == d1/cols:
                 # +2 is an offset for letters
                 qp.fillRect(3*(d0%cols)*width,                    (d0/cols)*height+2, 3*(d1-d0)*width - width, 1*height, brush)
-                qp.fillRect(3*cols*width + 5*width + (d0%cols)*width, (d0/cols)*height+2, (d1-d0)*width,           1*height, brush)
+                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0/cols)*height+2, (d1-d0)*width,           1*height, brush)
 
                 d0 += (d1 - d0)
             else:    
                 qp.fillRect(3*(d0%cols)*width,                    (d0/cols)*height+2, 3*(cols - d0%cols)*width - width, 1*height, brush)
-                qp.fillRect(3*cols*width + 5*width + (d0%cols)*width, (d0/cols)*height+2, (cols - d0%cols)*width,       1*height, brush)
+                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0/cols)*height+2, (cols - d0%cols)*width,       1*height, brush)
 
                 d0 += (cols - d0%cols)
 

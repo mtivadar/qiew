@@ -42,6 +42,7 @@ class HexViewMode(ViewMode):
 
         self.newPix = None
         self.Ops = []
+        self.gap = 5
 
         self.resize(width, height)
 
@@ -119,6 +120,11 @@ class HexViewMode(ViewMode):
         else:
             self.idxHexColumns += 1
 
+        # if screen is ont big enough, retry
+        if self.HexColumns[self.idxHexColumns]*(3+1) + self.gap >= self.CON_COLUMNS:
+            self.changeHexColumns()
+            return
+
         self.resize(self.width, self.height)
 
 
@@ -173,8 +179,7 @@ class HexViewMode(ViewMode):
 
 
     def scroll_h(self, dx):
-
-        gap = 5
+        gap = self.gap
 
         # hex part
         self.qpix.scroll(dx*3*self.fontWidth, 0, QtCore.QRect(0, 0, self.COLUMNS*3*self.fontWidth, self.ROWS*self.fontHeight + self.SPACER))
@@ -301,7 +306,7 @@ class HexViewMode(ViewMode):
                 # save hex position
                 x, y = cemu.getXY()
                 # write text
-                cemu.writeAt(self.COLUMNS*3 + 5 + (i%self.COLUMNS), y, self.cp437(c))
+                cemu.writeAt(self.COLUMNS*3 + self.gap + (i%self.COLUMNS), y, self.cp437(c))
 
                 # go back to hex chars
                 cemu.gotoXY(x, y)
@@ -369,7 +374,7 @@ class HexViewMode(ViewMode):
             # save hex position
             x, y = cemu.getXY()
             # write text
-            cemu.writeAt(self.COLUMNS*3 + 5 + (i%self.COLUMNS), y, self.cp437(c))
+            cemu.writeAt(self.COLUMNS*3 + self.gap + (i%self.COLUMNS), y, self.cp437(c))
             # go back to hex chars
             cemu.gotoXY(x, y)
             if (i+1)%self.COLUMNS == 0:
@@ -456,7 +461,7 @@ class HexViewMode(ViewMode):
 
         qp.setOpacity(0.8)
         # cursor on text
-        qp.drawRect((self.COLUMNS*3 + 5 + cursorX)*self.fontWidth, cursorY*self.fontHeight+2, self.fontWidth, self.fontHeight)
+        qp.drawRect((self.COLUMNS*3 + self.gap + cursorX)*self.fontWidth, cursorY*self.fontHeight+2, self.fontWidth, self.fontHeight)
 
         # cursor on hex
         qp.drawRect(cursorX*3*self.fontWidth, cursorY*self.fontHeight+2, 2*self.fontWidth, self.fontHeight)
@@ -592,4 +597,5 @@ class HexViewMode(ViewMode):
         for i in range(self.HexColumns[self.idxHexColumns]):
             s += '{0} '.format('{0:x}'.format(i).zfill(2))
 
+        s += self.gap*' ' + 'Text'
         return s
