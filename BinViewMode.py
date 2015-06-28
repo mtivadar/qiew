@@ -309,10 +309,12 @@ class BinViewMode(ViewMode):
 
         if dx != 0:
             if self.dataModel.inLimits((self.dataModel.getOffset() - dx)):
+                self.dataModel.slide(-dx)
                 self.scroll_h(dx)
 
         if dy != 0:
             if self.dataModel.inLimits((self.dataModel.getOffset() - dy*self.COLUMNS)):
+                self.dataModel.slide(-dy*self.COLUMNS)
                 self.scroll_v(dy, cachePix, pageOffset)
             else:
                 if dy <= 0:
@@ -405,7 +407,6 @@ class BinViewMode(ViewMode):
         if direction == Directions.Left:
             if cursorX == 0:
                 if cursorY == 0:
-                    self.dataModel.slide(-1)
                     self.scroll(1, 0)
                 else:
                     self.cursor.moveAbsolute(self.COLUMNS-1, cursorY - 1)
@@ -419,7 +420,6 @@ class BinViewMode(ViewMode):
 
             if cursorX == self.COLUMNS-1:
                 if cursorY == self.ROWS-1:
-                    self.dataModel.slide(1)
                     self.scroll(-1, 0)
                 else:
                     self.cursor.moveAbsolute(0, cursorY + 1)
@@ -434,14 +434,12 @@ class BinViewMode(ViewMode):
                 return
 
             if cursorY == self.ROWS-1:
-                self.dataModel.slideLine(1)
                 self.scroll(0, -1)
             else:
                 self.cursor.move(0, 1)
 
         if direction == Directions.Up:
             if cursorY == 0:
-                self.dataModel.slideLine(-1)
                 self.scroll(0, 1)
             else:
                 self.cursor.move(0, -1)
@@ -489,43 +487,41 @@ class BinViewMode(ViewMode):
 
                 ]
 
+    def anon(self, dx, dy):
+        self.scroll(dx, dy)
+
+        # scroll modifies datamodel offset, so we must do scroll and cursor
+        # operations toghether
+
+        y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
+        if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
+            y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
+            self.cursor.moveAbsolute(x, y)
+
+        # we call draw() again because it was called before by scroll()
+        # and the cursor is already painted but it's not in correct position
+        # kinda hack, don't really like it
+        self.draw()
+
     def handleKeyEvent(self, modifiers, key):
 
         if modifiers == QtCore.Qt.ControlModifier:
             if key == QtCore.Qt.Key_Right:
-                self.dataModel.slide(1)
-
-                self.addop((self.scroll, -1, 0))
-
-                if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
-                    y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
-                    self.cursor.moveAbsolute(x, y)
-
+                self.addop((self.anon, -1, 0))
 
             if key == QtCore.Qt.Key_Left:
-                self.dataModel.slide(-1)
                 self.addop((self.scroll, 1, 0))
 
 
             if key == QtCore.Qt.Key_Down:
-                self.dataModel.slideLine(1)
-                self.addop((self.scroll, 0, -1))
-
-                if self.getCursorAbsolutePosition() >= self.dataModel.getDataSize():
-                    y, x = self.dataModel.getXYInPage(self.dataModel.getDataSize() - 1)
-                    self.cursor.moveAbsolute(x, y)
-
-
+                self.addop((self.anon, 0, -1))
 
             if key == QtCore.Qt.Key_Up:
-                self.dataModel.slideLine(-1)
                 self.addop((self.scroll, 0, 1))
-
 
             if key == QtCore.Qt.Key_End:
                 self.moveCursor(Directions.CtrlEnd)
                 self.addop((self.draw,))
-
 
             if key == QtCore.Qt.Key_Home:
                 self.moveCursor(Directions.CtrlHome)
@@ -539,42 +535,31 @@ class BinViewMode(ViewMode):
             if key == QtCore.Qt.Key_Left:
                 self.moveCursor(Directions.Left)
                 self.addop((self.draw,))
-                #self.draw()
 
             if key == QtCore.Qt.Key_Right:
                 self.moveCursor(Directions.Right)
                 self.addop((self.draw,))
-                #self.draw()
                 
             if key == QtCore.Qt.Key_Down:
                 self.moveCursor(Directions.Down)
                 self.addop((self.draw,))
-                #self.draw()
                 
             if key == QtCore.Qt.Key_End:
                 self.moveCursor(Directions.End)
                 self.addop((self.draw,))
-                #self.draw()
                 
             if key == QtCore.Qt.Key_Home:
                 self.moveCursor(Directions.Home)
                 self.addop((self.draw,))
-                #self.draw()
 
             if key == QtCore.Qt.Key_Up:
                 self.moveCursor(Directions.Up)
                 self.addop((self.draw,))
-                #self.draw()
                 
             if key == QtCore.Qt.Key_PageDown:
-                self.dataModel.slidePage(1)
-
                 self.addop((self.scrollPages, 1))
-                #self.scrollPages(1)
     
             if key == QtCore.Qt.Key_PageUp:
-                self.dataModel.slidePage(-1)
-                #self.scrollPages(-1)
                 self.addop((self.scrollPages, -1))
 
             return True
