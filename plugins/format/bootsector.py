@@ -173,9 +173,24 @@ class Bootsector(FileFormat):
 
 
 class MyDialogGoto(DialogGoto):
-    def fa(self, offset):
-        return offset - 0x7c00
+    def initUI(self):
+        super(MyDialogGoto, self).initUI()
+        self.ui.comboBox.clear()
 
+        # for bootsector we have fileaddress/load(mem)address
+        self.ui.comboBox.addItems(['FileAddress', 'MemAddress'])
+
+        self.GoTos = {'FileAddress' : self.fa, 'MemAddress' : self.va}
+
+    # goto address type fa/va
+    def fa(self, result):
+        return result
+
+    def va(self, offset):
+        if offset < 0x7c00:
+            return 0
+            
+        return offset - 0x7c00
 
 class WHeaders(QtGui.QDialog):
     
