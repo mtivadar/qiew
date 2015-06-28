@@ -7,9 +7,22 @@ class Observer:
 
 class DataModel(object, Observer):
     def __init__(self, data):
-        self.dataOffset = 0
+        self._dataOffset = 0
         self.rows = self.cols = 0
         self.data = data
+        self._lastOffset = 0
+
+    @property
+    def dataOffset(self):
+        return self._dataOffset
+    
+    @dataOffset.setter
+    def dataOffset(self, value):
+        self._lastOffset = self._dataOffset
+        self._dataOffset = value
+
+    def getLastOffset(self):
+        return self._lastOffset
 
     def inLimits(self, x):
         if x >= 0 and x < len(self.data):
