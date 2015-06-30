@@ -382,25 +382,6 @@ class BinViewMode(ViewMode):
         x, y = self.cursor.getPosition()
         return self.dataModel.getOffset() + y*self.COLUMNS + x
 
-    def goTo(self, offset):
-        if self.dataModel.offsetInPage(offset):
-            # if in current page, move cursore
-            x, y = self.dataModel.getXYInPage(offset)
-            self.cursor.moveAbsolute(y, x)
-        else:
-            # else, move page
-            self.dataModel.goTo(offset)
-            self.cursor.moveAbsolute(0, 0)
-            #self.draw(refresh=True)
-
-
-        self.draw(refresh=True)
-        if self.widget:
-            self.widget.update()
-        #self.update()
-
-        #self.cursor.moveAbsolute()
-
     def moveCursor(self, direction):
         cursorX, cursorY = self.cursor.getPosition()
 
