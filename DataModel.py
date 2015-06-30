@@ -170,7 +170,7 @@ class FileDataModel(DataModel):
     def __init__(self, filename):
         self._filename = filename
 
-        self._f = open(filename, "r+b")
+        self._f = open(filename, "rb")
 
         # memory-map the file, size 0 means whole file
         self._mapped = mmap.mmap(self._f.fileno(), 0, access=mmap.ACCESS_COPY)
