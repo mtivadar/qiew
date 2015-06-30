@@ -100,5 +100,25 @@ class ViewMode(Observable):
 
         return bytearray(data[dataOffset:dataOffset + rows*cols])
 
+    # moves cursor to offset in page, or moves to page
+    def goTo(self, offset):
+        # typical goTo
+
+        if self.dataModel.offsetInPage(offset):
+            # if in current page, move cursore
+            x, y = self.dataModel.getXYInPage(offset)
+            self.cursor.moveAbsolute(y, x)
+            self.draw(refresh=False)
+        else:
+            # else, move page
+            self.dataModel.goTo(offset)
+            self.cursor.moveAbsolute(0, 0)
+            self.draw(refresh=True)
+
+
+        #self.draw(refresh=False)
+        if self.widget:
+            self.widget.update()
+
     def getHeaderInfo(self):
         return ''
