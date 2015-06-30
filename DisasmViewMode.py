@@ -218,6 +218,7 @@ class DisasmViewMode(ViewMode):
 
     def getCursorAbsolutePosition(self):
         x, y = self.cursor.getPosition()
+
         preY = sum([asm.size for asm in self.OPCODES[:y]])
 
         asm = self.OPCODES[y]
@@ -684,6 +685,7 @@ class DisasmViewMode(ViewMode):
         return None
 
     def _getOffsetOfRow(self, row):
+        # of course, it could be done nicely, not like this
         size = 0
         for i, asm in enumerate(self.OPCODES):
             if i == row:
@@ -699,19 +701,23 @@ class DisasmViewMode(ViewMode):
         if offset < self.dataModel.getOffset() + tsize and offset > self.dataModel.getOffset():
             # if in current page, move cursor
             row = self._getRowInPage(offset)
-            if row:
-                self.cursor.moveAbsolute(0, row)
+            off_row = self._getOffsetOfRow(row)
+            diff = offset - self.dataModel.getOffset() - off_row# self.OPCODES[row].size
+
+            if row is not None:
+                self.cursor.moveAbsolute((diff)*3, row)
+
+            self.draw(refresh=False)
         else:
             # else, move page
             self.dataModel.goTo(offset)
             self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm())            
             self.cursor.moveAbsolute(0, 0)
-            #self.draw(refresh=True)
+            self.draw(refresh=True)
 
         #TODO: getDisplayablePage() won't contain what we want to disasm. we will use dataModel
         #      in this view, getDisplayablePage will contain disasm text, because that is what is displayed
 
-        self.draw(refresh=True)
         if self.widget:
             self.widget.update()
 
