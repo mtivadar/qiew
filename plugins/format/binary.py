@@ -17,7 +17,7 @@ class Binary(FileFormat):
         return True
 
     def init(self, viewMode):
-        self.viewMode = viewMode
+        self._viewMode = viewMode
 
         self.MZbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
         self.greenPen = QtGui.QPen(QtGui.QColor(255, 255, 0))
@@ -32,7 +32,7 @@ class Binary(FileFormat):
         self.textDecorator = HighlightPrefix(self.textDecorator, '\xFF\x15', additionalLength=4, brush=self.grayBrush, pen=self.whitePen)
         self.textDecorator = HighlightWideChar(self.textDecorator)
 
-        self.viewMode.setTransformationEngine(self.textDecorator)
+        self._viewMode.setTransformationEngine(self.textDecorator)
         return True
 
     def hintDisasm(self):
@@ -45,12 +45,13 @@ class Binary(FileFormat):
         return va
         
     def getBanners(self):
-        return [Banners.FileAddrBanner(self.dataModel, self.viewMode), Banners.TopBanner(self.dataModel, self.viewMode)]
+        return [Banners.FileAddrBanner(self.dataModel, self._viewMode), Banners.TopBanner(self.dataModel, self._viewMode)]
 
     def registerShortcuts(self, parent):
         self._parent = parent
         self.w = DialogGoto(parent, self)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)
 
     def _showit(self):
         if not self.w.isVisible():
@@ -58,4 +59,20 @@ class Binary(FileFormat):
         else:
             self.w.hide()
 
+    def skip_chars(self):
 
+        off = self._viewMode.getCursorAbsolutePosition()
+
+        x = off + 1
+
+        sizeOfData = self.dataModel.getDataSize()
+        if x >= sizeOfData:
+            return
+
+        # skip bytes of current value
+
+        b = self.dataModel.getBYTE(off)
+        while x < sizeOfData - 1 and self.dataModel.getBYTE(x) == b:
+            x += 1
+
+        self._viewMode.goTo(x)
