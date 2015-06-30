@@ -621,6 +621,24 @@ class PE(FileFormat):
 
         self._parent.update()
 
+    def skip_chars(self):
+
+        off = self._viewMode.getCursorAbsolutePosition()
+
+        x = off + 1
+
+        sizeOfData = self.dataModel.getDataSize()
+        if x >= sizeOfData:
+            return
+
+        # skip bytes of current value
+
+        b = self.dataModel.getBYTE(off)
+        while x < sizeOfData - 1 and self.dataModel.getBYTE(x) == b:
+            x += 1
+
+        self._viewMode.goTo(x)
+
     def _showGoto(self):
         if not self.dgoto.isVisible():
             self.dgoto.show()
@@ -641,6 +659,7 @@ class PE(FileFormat):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)
 
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)
 
         self.writeData(self.w)
 
