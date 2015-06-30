@@ -327,22 +327,6 @@ class HexViewMode(ViewMode):
 
         self.drawAdditionals()
 
-    def goTo(self, offset):
-        if self.dataModel.offsetInPage(offset):
-            # if in current page, move cursore
-            x, y = self.dataModel.getXYInPage(offset)
-            self.cursor.moveAbsolute(y, x)
-        else:
-            # else, move page
-            self.dataModel.goTo(offset)
-            self.cursor.moveAbsolute(0, 0)
-            #self.draw(refresh=True)
-
-
-        self.draw(refresh=True)
-        if self.widget:
-            self.widget.update()
-
     def drawTextMode(self, qp):
        
         # draw background
