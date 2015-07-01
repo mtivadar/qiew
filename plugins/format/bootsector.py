@@ -161,6 +161,55 @@ class Bootsector(FileFormat):
 
             w.ui.tableWidget.setItem(5, i, item)
 
+    def skip_section_up(self):
+        # cursor pozition in datamodel
+        off = self.viewMode.getCursorAbsolutePosition()
+        x = off
+
+        T = [0x1be, 0x1ce, 0x1de, 0x1ee]
+
+        if off < 0x1be:
+            x = 0x1be
+
+        elif off > 0x1ee + 0x10:
+            x = 0x1ee
+
+        for t in T:
+            if off > t and off < t + 0x10:
+                x = t + 0x10
+            elif off == t:
+                if t == 0x1ee:
+                    x = 0x1be
+                else:
+                    x = t + 0x10
+
+        self.viewMode.goTo(x)
+
+
+    def skip_section_dw(self):
+        # cursor pozition in datamodel
+        off = self.viewMode.getCursorAbsolutePosition()
+        x = off
+
+        T = [0x1be, 0x1ce, 0x1de, 0x1ee]
+
+        if off < 0x1be:
+            x = 0x1be
+
+        elif off > 0x1ee + 0x10:
+            x = 0x1ee
+
+        for t in T:
+            if off > t and off < t + 0x10:
+                x = t
+            elif off == t:
+                if t == 0x1be:
+                    x = 0x1ee
+                else:
+                    x = t - 0x10
+
+        self.viewMode.goTo(x)
+
     def registerShortcuts(self, parent):
         self._parent = parent
         self.w = WHeaders(parent, self)
@@ -170,6 +219,9 @@ class Bootsector(FileFormat):
         self.g = MyDialogGoto(parent, self)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)
+
 
 
 class MyDialogGoto(DialogGoto):
@@ -189,7 +241,7 @@ class MyDialogGoto(DialogGoto):
     def va(self, offset):
         if offset < 0x7c00:
             return 0
-            
+
         return offset - 0x7c00
 
 class WHeaders(QtGui.QDialog):

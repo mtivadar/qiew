@@ -639,6 +639,75 @@ class PE(FileFormat):
 
         self._viewMode.goTo(x)
 
+
+    def skip_section_up(self):
+        # cursor pozition in datamodel
+        off = self._viewMode.getCursorAbsolutePosition()
+        x = off
+        
+        # get section represented by offset
+        section = self.PE.get_section_by_offset(off)
+
+        if section is None:
+            # if it's not in a section, find it
+            while off < self.dataModel.getDataSize() and self.PE.get_section_by_offset(off) is None:
+                off += 1
+
+            section = self.PE.get_section_by_offset(off)
+
+            if section:
+                # if found, go to begining
+                x = section.PointerToRawData
+            else:
+                if off == self.dataModel.getDataSize():
+                    # if eof, go to the end
+                    x = self.dataModel.getDataSize() - 1
+                else:
+                    # don't know what to do
+                    return
+
+        else:
+            # we found a section, go to the end + 1 (actually it's the next section physically in file)
+            x =  section.PointerToRawData + section.SizeOfRawData
+
+        self._viewMode.goTo(x)
+
+    def skip_section_dw(self):
+        # cursor pozition in datamodel
+        off = self._viewMode.getCursorAbsolutePosition()
+
+        # get section represented by offset
+        section = self.PE.get_section_by_offset(off)
+        x = off
+
+        if section is None:
+            # if it's not in a section, find it
+            while off > 0 and self.PE.get_section_by_offset(off) is None:
+                off -= 1
+
+            section = self.PE.get_section_by_offset(off)
+
+            if section:
+                # if found, go to begining
+                x = section.PointerToRawData
+            else:
+                if off == 0:
+                    # if start of file, go to 0
+                    x = off
+
+        else:
+            # we found a section, go to the preceding one
+            if section.PointerToRawData >= 0:
+                x =  section.PointerToRawData - 1
+                section = self.PE.get_section_by_offset(x)
+                if section:
+                    x = section.PointerToRawData
+                else:
+                    x = 0
+
+        self._viewMode.goTo(x)
+
+
     def _showGoto(self):
         if not self.dgoto.isVisible():
             self.dgoto.show()
@@ -660,6 +729,10 @@ class PE(FileFormat):
 
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)
+
 
         self.writeData(self.w)
 
