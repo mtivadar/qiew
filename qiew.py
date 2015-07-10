@@ -76,8 +76,8 @@ class binWidget(QtGui.QWidget):
         
 
 
-        self.multipleViewModes = [BinViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self),
-                                  HexViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self),
+        self.multipleViewModes = [BinViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self, plugin=po),
+                                  HexViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self, plugin=po),
                                   DisasmViewMode(self.size().width(), self.size().height(), self.dataModel, self.cursor, self, plugin=po)]
 
         self.viewMode = self.multipleViewModes[0]
@@ -233,10 +233,16 @@ class binWidget(QtGui.QWidget):
         
         if event.type() == QtCore.QEvent.KeyPress: 
             #TODO: should we accept only certain keys ?
-
             key = event.key()
             modifiers = event.modifiers()
+            if key == QtCore.Qt.Key_F2:
+                if self.viewMode.isEditable():
+                    if self.viewMode.isInEditMode():
+                        self.viewMode.setEditMode(False)
+                    else:
+                        self.viewMode.setEditMode(True)
 
+                    self.viewMode.draw(refresh=False)
             # switch view mode
             if key == QtCore.Qt.Key_Tab:
                     offs = self.viewMode.getCursorOffsetInPage()
@@ -285,11 +291,12 @@ class binWidget(QtGui.QWidget):
 
 
             if key == QtCore.Qt.Key_F10:
+                self.dataModel.flush()
                 import os
                 self.w = WHeaders(self, None)
                 self.w.show()
 
-            if self.viewMode.handleKeyEvent(modifiers, key):
+            if self.viewMode.handleKeyEvent(modifiers, key, event=event):
                 self.update()
 
 
@@ -299,7 +306,11 @@ class binWidget(QtGui.QWidget):
         qp.setViewport(self.offsetWindow_h, self.offsetWindow_v, self.size().width(), self.size().height())
         qp.setWindow(0, 0, self.size().width(), self.size().height())
 
+    def needsSave(self):
+        return self.dataModel.isDirty()
 
+    def save(self):
+        self.dataModel.flush()
 
 class WHeaders(QtGui.QDialog):
     
@@ -441,13 +452,28 @@ class WHeaders(QtGui.QDialog):
         self.close()
 
 
-
-
 class Qiew(QtGui.QWidget):
     
     def __init__(self):
         super(Qiew, self).__init__()
         self.initUI()
+
+    def closeEvent(self, event):
+        if not self.wid.needsSave():
+            event.accept()
+            return
+
+        quit_msg = "Do you want to save the changes?"
+        reply = QtGui.QMessageBox.question(self, 'Qiew', 
+                         quit_msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No, QtGui.QMessageBox.Cancel)
+
+        if reply == QtGui.QMessageBox.Yes:
+            self.wid.save()
+            event.accept()
+        elif reply == QtGui.QMessageBox.No:
+            event.accept()
+        else:
+            event.ignore()
 
     def initUI(self):      
 
