@@ -28,12 +28,16 @@ class IDisasm():
 
 class FileFormat(IPlugin, IDisasm):
     name = ''
+    _Shortcuts = []
 
     def isRecognized(self):
         return False
 
     def init(self, viewMode):
         pass
+
+    def getShortcuts(self):
+        return self._Shortcuts
 
     def registerShortcuts(self, parent):
         pass
