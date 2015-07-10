@@ -639,6 +639,28 @@ class PE(FileFormat):
 
         self._viewMode.goTo(x)
 
+    def skip_block(self):
+
+        off = self._viewMode.getCursorAbsolutePosition()
+
+        x = off
+
+        sizeOfData = self.dataModel.getDataSize()
+        if x >= sizeOfData:
+            return
+
+        # skip bytes of current value
+
+        b = self.dataModel.getBYTE(off)
+        while x < sizeOfData - 1 and self.dataModel.getQWORD(x) != 0:
+            x += 1
+
+        if x == off:
+            if x < sizeOfData - 1:
+                x += 1
+
+        self._viewMode.goTo(x)
+
 
     def skip_section_up(self):
         # cursor pozition in datamodel
@@ -728,6 +750,7 @@ class PE(FileFormat):
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
 
