@@ -717,27 +717,24 @@ class PE(FileFormat):
     def registerShortcuts(self, parent):
         self.w = WHeaders(parent, self)
         self._parent = parent
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.doit, self.doit)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+V"), parent, self.shortVersionInfo, self.shortVersionInfo)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.shortHeader, self.shortHeader)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+I"), parent, self.shortImports, self.shortImports)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.shortExports, self.shortExports)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+S"), parent, self.shortSections, self.shortSections)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+D"), parent, self.shortDirectories, self.shortDirectories)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)
-
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)
-
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)
-
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.doit, self.doit)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+V"), parent, self.shortVersionInfo, self.shortVersionInfo)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.shortHeader, self.shortHeader)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+I"), parent, self.shortImports, self.shortImports)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.shortExports, self.shortExports)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+S"), parent, self.shortSections, self.shortSections)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+D"), parent, self.shortDirectories, self.shortDirectories)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
 
         self.writeData(self.w)
 
         self.dgoto = PEDialogGoto(parent, self)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showGoto, self._showGoto)
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showGoto, self._showGoto)]
 
 
 # GoTo dialog (inheritance from FileFormat DialogGoto)

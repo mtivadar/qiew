@@ -50,8 +50,8 @@ class Binary(FileFormat):
     def registerShortcuts(self, parent):
         self._parent = parent
         self.w = DialogGoto(parent, self)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
 
     def _showit(self):
         if not self.w.isVisible():
