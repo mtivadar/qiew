@@ -12,13 +12,14 @@ class Observable(object):
         for cbk in self.Callbacks:
             cbk.update_geometry(rows, cols)
 
-class ViewMode(Observable):
+class ViewMode(Observable, object):
 
     SPACER = 4
 
     def __init__(self):
-        super().__init__()
+        super(ViewMode, self).__init__()
         self.selector = None
+        self._edit = False
 
     """
     Convert IBM437 character codes 0x00 - 0xFF into Unicode.
@@ -119,6 +120,15 @@ class ViewMode(Observable):
         #self.draw(refresh=False)
         if self.widget:
             self.widget.update()
+
+    def isEditable(self):
+        return False
+
+    def setEditMode(self, value):
+        self._edit = value
+
+    def isInEditMode(self):
+        return self._edit
 
     def getHeaderInfo(self):
         return ''
