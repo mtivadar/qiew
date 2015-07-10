@@ -980,7 +980,7 @@ class DisasmViewMode(ViewMode):
             del self.FlowHistory[-1]
             self.goTo(offset)
 
-    def handleKeyEvent(self, modifiers, key):
+    def handleKeyEvent(self, modifiers, key, event=None):
 
         if modifiers == QtCore.Qt.ControlModifier:
             if key == QtCore.Qt.Key_Right:
