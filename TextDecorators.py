@@ -47,6 +47,12 @@ class TextDecorator(CTextDecorator):
                         False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False]
 
 
+    def reset(self):
+        self.penMap = {}
+        self.brushMap = {}
+        self.PenInterval = []
+
+        
     def getDataModel(self):
         return self.dataModel
 
@@ -127,6 +133,14 @@ class PageDecorator(TextDecorator):
     def __init__(self, decorated):
         pass
 
+ 
+    def reset(self):
+        self.decorated.reset()
+
+        self.penMap = {}
+        self.brushMap = {}
+        self.PenInterval = []
+
     def getBrushMap(self):
         return self.brushMap
 
@@ -182,7 +196,6 @@ class HighlightPrefix(PageDecorator):
         self.brush = brush
         self.text = text
         self.pen = pen
-
 
     def decorate(self, pageOffset=None):
         page = self.decorated.decorate(pageOffset)
