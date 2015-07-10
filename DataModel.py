@@ -11,6 +11,7 @@ class DataModel(object, Observer):
         self.rows = self.cols = 0
         self.data = data
         self._lastOffset = 0
+        self._dirty = False
 
     @property
     def dataOffset(self):
@@ -150,6 +151,17 @@ class DataModel(object, Observer):
     def getData(self):
         return self.data
 
+    def isDirty(self):
+        return self._dirty
+
+    def setData_b(self, offset, b):
+        if self.inLimits(offset):
+            self.data[offset] = b
+            self._dirty = True
+            return True
+
+        return False
+
     def getDataSize(self):
         return len(self.data)
 
@@ -170,7 +182,7 @@ class FileDataModel(DataModel):
     def __init__(self, filename):
         self._filename = filename
 
-        self._f = open(filename, "rb")
+        self._f = open(filename, "r+b")
 
         # memory-map the file, size 0 means whole file
         self._mapped = mmap.mmap(self._f.fileno(), 0, access=mmap.ACCESS_COPY)
