@@ -1,24 +1,24 @@
 from ViewMode import *
 from cemu import *
 import TextSelection
+from TextDecorators import *    
 
 from PyQt4 import QtGui, QtCore
 import PyQt4
 from time import time 
 import sys
 import threading
+import string
 
 class BinViewMode(ViewMode):
-    def __init__(self, width, height, data, cursor, widget=None):
-        super(ViewMode, self).__init__()
+    def __init__(self, width, height, data, cursor, widget=None, plugin=None):
+        super(BinViewMode, self).__init__()
 
         self.dataModel = data
         self.addHandler(self.dataModel)
 
         self.width = width
         self.height = height
-        #self.cursorX = 0
-        #self.cursorY = 0
 
         self.cursor = cursor
         self.widget = widget
@@ -50,6 +50,7 @@ class BinViewMode(ViewMode):
         self.Paints = {}
         self.newPix = None
         self.Ops = []
+        self.plugin = plugin
 
     @property
     def fontWidth(self):
@@ -84,6 +85,7 @@ class BinViewMode(ViewMode):
 
     def setTransformationEngine(self, engine):
         self.transformationEngine = engine
+        self.original_textdecorator = engine
 
     def computeTextArea(self):
         self.COLUMNS = self.width/self.fontWidth
@@ -126,7 +128,7 @@ class BinViewMode(ViewMode):
     def stopSelection(self):
         self.selector.stopSelection()
 
-    def draw(self, refresh=False):
+    def draw(self, refresh=False, row=0, howMany=0):
         if self.dataModel.getOffset() in self.Paints:
             self.refresh = False
             self.qpix = QtGui.QPixmap(self.Paints[self.dataModel.getOffset()])
@@ -138,7 +140,10 @@ class BinViewMode(ViewMode):
             qp = QtGui.QPainter()
             qp.begin(self.qpix)
             #start = time()
-            self.drawTextMode(qp)
+            if not howMany:
+                howMany = self.ROWS
+
+            self.drawTextMode(qp, row=row, howMany=howMany)
             #end = time() - start
             #print 'Time ' + str(end)
             self.refresh = False
@@ -147,10 +152,11 @@ class BinViewMode(ViewMode):
 #        self.Paints[self.dataModel.getOffset()] = QtGui.QPixmap(self.qpix)
         self.drawAdditionals()
 
+
     def draw2(self, qp, refresh=False):
         if self.refresh or refresh:
             start = time()
-            self.drawTextMode(qp)
+            self.drawTextMode(qp, howMany=self.ROWS)
             end = time() - start
             #print 'Time ' + str(end)
             qp = QtGui.QPainter()
@@ -161,6 +167,9 @@ class BinViewMode(ViewMode):
     def drawCursor(self, qp):
         cursorX, cursorY = self.cursor.getPosition()
         qp.setBrush(QtGui.QColor(255, 255, 0))
+
+        if self.isInEditMode():
+            qp.setBrush(QtGui.QColor(255, 102, 179))
 
         qp.setOpacity(0.8)
         qp.drawRect(cursorX*self.fontWidth, cursorY*self.fontHeight, self.fontWidth, self.fontHeight + 2)
@@ -255,6 +264,7 @@ class BinViewMode(ViewMode):
         lastBrush = None
 
         # cate linii desenam
+        k = time()
         for row in range(factor):
             # desenam caracterele
             #cemu.writeAt(0, row, str(page[row*self.COLUMNS:row*self.COLUMNS+self.COLUMNS]))
@@ -293,7 +303,7 @@ class BinViewMode(ViewMode):
                     cemu.writeAt_c(i, row, self.cp437(c))
                 
            
-
+        # TODO: text decorator is taking too much! print time() - k
         qp.end()
 
         end = time() - start
@@ -315,7 +325,10 @@ class BinViewMode(ViewMode):
         if dy != 0:
             if self.dataModel.inLimits((self.dataModel.getOffset() - dy*self.COLUMNS)):
                 self.dataModel.slide(-dy*self.COLUMNS)
+                #import time
+                #k = time.time()
                 self.scroll_v(dy, cachePix, pageOffset)
+                #print time.time() - k
             else:
                 if dy <= 0:
                     pass
@@ -355,9 +368,9 @@ class BinViewMode(ViewMode):
         self.qpix = self._getNewPixmap(self.width, self.height + self.SPACER)
         self.refresh = True
 
-    def drawTextMode(self, qp):
+    def drawTextMode(self, qp, row=0, howMany=1):
         # draw background
-        qp.fillRect(0, 0, self.COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight + self.SPACER, self.backgroundBrush)
+        qp.fillRect(0, row * self.fontHeight, self.COLUMNS * self.fontWidth,  howMany * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)
@@ -366,17 +379,23 @@ class BinViewMode(ViewMode):
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         page = self.transformationEngine.decorate()
-        for i, c in enumerate(page):
-            #self.decorate(qp, (i, c),  self.dataModel.getDisplayablePage())
-            c = self.transformationEngine.getChar(i)
-            qp.setPen(self.transformationEngine.choosePen(i))
 
-            if self.transformationEngine.chooseBrush(i) != None:
+        cemu.gotoXY(0, row)
+
+        for i, c in enumerate(page[row*self.COLUMNS:(row + howMany)*self.COLUMNS]):
+            x = i + row*self.COLUMNS
+
+            c = self.transformationEngine.getChar(x)
+            
+            qp.setPen(self.transformationEngine.choosePen(x))
+
+            if self.transformationEngine.chooseBrush(x) != None:
                 qp.setBackgroundMode(1)
-                qp.setBackground(self.transformationEngine.chooseBrush(i))
+                qp.setBackground(self.transformationEngine.chooseBrush(x))
 
             cemu.write(self.cp437(c))
             qp.setBackgroundMode(0)                        
+
     
     def getCursorAbsolutePosition(self):
         x, y = self.cursor.getPosition()
@@ -484,7 +503,24 @@ class BinViewMode(ViewMode):
         # kinda hack, don't really like it
         self.draw()
 
-    def handleKeyEvent(self, modifiers, key):
+    def handleEditMode(self, modifiers, key, event):
+        if key in range(0, 256):
+            offs = self.getCursorOffsetInPage()
+
+            self.dataModel.setData_b(self.dataModel.getOffset() + offs, str(event.text()))
+
+            z = self.dataModel.getOffset() + offs                
+            #TODO: sa nu se repete, tre original_transformengine
+            self.transformationEngine = RangePen(self.original_textdecorator, z, z + 0, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True) 
+
+            self.moveCursor(Directions.Right)
+        
+            x, y = self.cursor.getPosition()
+
+            self.draw(refresh=True, row=y, howMany=1)
+
+
+    def handleKeyEvent(self, modifiers, key, event=None):
 
         if modifiers == QtCore.Qt.ControlModifier:
             if key == QtCore.Qt.Key_Right:
@@ -543,9 +579,36 @@ class BinViewMode(ViewMode):
             if key == QtCore.Qt.Key_PageUp:
                 self.addop((self.scrollPages, -1))
 
+            if self.isInEditMode():
+                self.handleEditMode(modifiers, key, event)
+
             return True
 
         return False
+
+    def isEditable(self):
+        return True
+
+    def setEditMode(self, mode):
+        super(BinViewMode, self).setEditMode(mode)
+
+        letters = string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
+
+        # disable/enable shortcuts
+        if mode == False:
+            self.transformationEngine = self.original_textdecorator
+            self.transformationEngine.reset()
+            self.draw(refresh=True)
+
+            for shortcut in self.plugin.getShortcuts():
+                if shortcut.key().toString() in list(letters):
+                    shortcut.setEnabled(True)
+
+
+        if mode == True:
+            for shortcut in self.plugin.getShortcuts():
+                if shortcut.key().toString() in list(letters):
+                    shortcut.setEnabled(False)
 
     def handleKeyPressEvent(self, modifier, key):
         if modifier == QtCore.Qt.ShiftModifier:

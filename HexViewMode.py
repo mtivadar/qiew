@@ -1,12 +1,14 @@
 from ViewMode import *
 from cemu import *
 import TextSelection
+from TextDecorators import *   
 import string
+import PyQt4
 from PyQt4 import QtGui, QtCore
 
 class HexViewMode(ViewMode):
-    def __init__(self, width, height, data, cursor, widget=None):
-        super(ViewMode, self).__init__()
+    def __init__(self, width, height, data, cursor, widget=None, plugin=None):
+        super(HexViewMode, self).__init__()
 
         self.dataModel = data
         self.width = width
@@ -43,7 +45,9 @@ class HexViewMode(ViewMode):
         self.newPix = None
         self.Ops = []
         self.gap = 5
+        self.plugin = plugin
 
+        self.highpart = True
         self.resize(width, height)
 
 
@@ -58,6 +62,7 @@ class HexViewMode(ViewMode):
 
     def setTransformationEngine(self, engine):
         self.transformationEngine = engine
+        self.original_textdecorator = engine
 
     def _getNewPixmap(self, width, height):
         return QtGui.QPixmap(width, height)
@@ -317,20 +322,24 @@ class HexViewMode(ViewMode):
             cemu.writeLn()
         qp.end()
 
-    def draw(self, refresh=False):
+    def draw(self, refresh=False, row=0, howMany=0):
         if self.refresh or refresh:
             qp = QtGui.QPainter()
             qp.begin(self.qpix)
-            self.drawTextMode(qp)
+
+            if not howMany:
+                howMany = self.ROWS
+
+            self.drawTextMode(qp, row=row, howMany=howMany)
             self.refresh = False
             qp.end()
 
         self.drawAdditionals()
 
-    def drawTextMode(self, qp):
+    def drawTextMode(self, qp, row=0, howMany=1):
        
         # draw background
-        qp.fillRect(0, 0, self.CON_COLUMNS * self.fontWidth,  self.ROWS * self.fontHeight + self.SPACER, self.backgroundBrush)
+        qp.fillRect(0, row * self.fontHeight, self.CON_COLUMNS * self.fontWidth,  howMany * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)
@@ -340,33 +349,42 @@ class HexViewMode(ViewMode):
 
         page = self.transformationEngine.decorate()
 
-        for i, c in enumerate(self.getDisplayablePage()):     #TODO: does not apply all decorators
+        cemu.gotoXY(0, row)
 
-            if (i+1)%self.COLUMNS == 0:
+        for i, c in enumerate(self.getDisplayablePage()[row*self.COLUMNS:(row + howMany)*self.COLUMNS]):     #TODO: does not apply all decorators
+
+            w = i + row*self.COLUMNS
+
+            if (w+1)%self.COLUMNS == 0:
                 hex_s = str(hex(c)[2:]).zfill(2)
             else:
                 hex_s = str(hex(c)[2:]).zfill(2) + ' '
 
-            qp.setPen(self.transformationEngine.choosePen(i))
+            qp.setPen(self.transformationEngine.choosePen(w))
 
-            if self.transformationEngine.chooseBrush(i) != None:
+            if self.transformationEngine.chooseBrush(w) != None:
                 qp.setBackgroundMode(1)
-                qp.setBackground(self.transformationEngine.chooseBrush(i))
+                qp.setBackground(self.transformationEngine.chooseBrush(w))
     
             # write hex representation
             cemu.write(hex_s, noBackgroudOnSpaces=True)
             # save hex position
             x, y = cemu.getXY()
             # write text
-            cemu.writeAt(self.COLUMNS*3 + self.gap + (i%self.COLUMNS), y, self.cp437(c))
+            cemu.writeAt(self.COLUMNS*3 + self.gap + (w%self.COLUMNS), y, self.cp437(c))
             # go back to hex chars
             cemu.gotoXY(x, y)
-            if (i+1)%self.COLUMNS == 0:
+            if (w+1)%self.COLUMNS == 0:
                 cemu.writeLn()
 
             qp.setBackgroundMode(0)  
 
     def moveCursor(self, direction):
+        #TODO: have to move this, don't like it
+        if self.isInEditMode():
+            if self.highpart == False:
+                self.highpart = True
+
         cursorX, cursorY = self.cursor.getPosition()
 
         if direction == Directions.Left:
@@ -434,6 +452,9 @@ class HexViewMode(ViewMode):
 
     def drawCursor(self, qp):
         qp.setBrush(QtGui.QColor(255, 255, 0))
+        if self.isInEditMode():
+            qp.setBrush(QtGui.QColor(255, 102, 179))
+
         cursorX, cursorY = self.cursor.getPosition()
 
         columns = self.HexColumns[self.idxHexColumns]
@@ -444,11 +465,20 @@ class HexViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
 
         qp.setOpacity(0.8)
+        if self.isInEditMode():
+            qp.setOpacity(0.5)            
         # cursor on text
         qp.drawRect((self.COLUMNS*3 + self.gap + cursorX)*self.fontWidth, cursorY*self.fontHeight+2, self.fontWidth, self.fontHeight)
 
         # cursor on hex
-        qp.drawRect(cursorX*3*self.fontWidth, cursorY*self.fontHeight+2, 2*self.fontWidth, self.fontHeight)
+        if not self.isInEditMode():
+            qp.drawRect(cursorX*3*self.fontWidth, cursorY*self.fontHeight+2, 2*self.fontWidth, self.fontHeight)
+        else:
+            if self.highpart:
+                qp.drawRect(cursorX*3*self.fontWidth, cursorY*self.fontHeight+2, 1*self.fontWidth, self.fontHeight)
+            else:
+                qp.drawRect(cursorX*3*self.fontWidth + self.fontWidth, cursorY*self.fontHeight+2, 1*self.fontWidth, self.fontHeight)
+
         qp.setOpacity(1)
 
     def keyFilter(self):
@@ -490,7 +520,74 @@ class HexViewMode(ViewMode):
         # kinda hack, don't really like it
         self.draw()
 
-    def handleKeyEvent(self, modifiers, key):
+    def handleEditMode(self, modifiers, key, event):
+             
+        if str(event.text()).lower() in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
+
+            offs = self.getCursorOffsetInPage()
+
+            b = self.dataModel.getBYTE(self.dataModel.getOffset() + offs)
+            z = int(str(event.text()), 16)
+
+            # compute nibble
+            if self.highpart:
+                b =  ((z << 4) | (b & 0x0F)) & 0xFF
+            else:
+                b =  ((b & 0xF0) | (z & 0x0F)) & 0xFF
+
+
+            block = modifiers == QtCore.Qt.AltModifier and self.selector.getCurrentSelection()
+
+            # change block or single byte
+            if block:
+                # multiple, with ALT key
+                if self.selector.getCurrentSelection():
+                    u, v = self.selector.getCurrentSelection()
+
+                    for x in range(u, v):
+                        b = self.dataModel.getBYTE(x)
+                        if self.highpart:
+                            b =  ((z << 4) | (b & 0x0F)) & 0xFF
+                        else:
+                            b =  ((b & 0xF0) | (z & 0x0F)) & 0xFF
+
+                        self.dataModel.setData_b(x, chr(b))
+            else:
+                self.dataModel.setData_b(self.dataModel.getOffset() + offs, chr(b))
+
+            if block:
+                self.transformationEngine = RangePen(self.original_textdecorator, u, v, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True) 
+            else:
+                z = self.dataModel.getOffset() + offs
+                #TODO: sa nu se repete, tre original_transformengine
+                self.transformationEngine = RangePen(self.original_textdecorator, z, z + 0, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True) 
+
+            # se if we are at end of row, we must also redraw previous line
+            highpart = self.highpart
+
+            # for block mode, move cursor
+            if not block:
+                x, old_y = self.cursor.getPosition()
+
+                if self.highpart == False:
+                    self.moveCursor(Directions.Right)
+            
+                x, y = self.cursor.getPosition()
+
+            if highpart:
+                self.highpart = False
+            else:
+                self.highpart = True
+
+            if block:
+                self.draw(refresh=True)
+            else:
+                self.draw(refresh=True, row=y, howMany=1)
+                if y > old_y:
+                    self.draw(refresh=True, row=y-1, howMany=1)
+
+
+    def handleKeyEvent(self, modifiers, key, event=None):
 
         if modifiers == QtCore.Qt.ControlModifier:
 
@@ -558,9 +655,33 @@ class HexViewMode(ViewMode):
                     self.cursor.moveAbsolute(columns-1, y)
                 self.addop((self.draw,))
 
+            if self.isInEditMode():
+                self.handleEditMode(modifiers, key, event)
+
             return True
 
         return False
+
+    def isEditable(self):
+        return True
+
+    def setEditMode(self, mode):
+        super(HexViewMode, self).setEditMode(mode)
+        if mode == False:
+            self.highpart = True
+            self.transformationEngine = self.original_textdecorator
+            self.transformationEngine.reset()
+            self.draw(refresh=True)
+
+            for shortcut in self.plugin.getShortcuts():
+                if shortcut.key().toString() in list('0123456789abcdefABCDEF') + ['Alt+A', 'Alt+B', 'Alt+C', 'Alt+D', 'Alt+E', 'Alt+F']:
+                    shortcut.setEnabled(True)
+
+
+        if mode == True:
+            for shortcut in self.plugin.getShortcuts():
+                if shortcut.key().toString() in list('0123456789abcdefABCDEF') + ['Alt+A', 'Alt+B', 'Alt+C', 'Alt+D', 'Alt+E', 'Alt+F']:
+                    shortcut.setEnabled(False)
 
     def handleKeyPressEvent(self, modifier, key):
         if modifier == QtCore.Qt.ShiftModifier:
@@ -571,7 +692,6 @@ class HexViewMode(ViewMode):
         if modifier == QtCore.Qt.ShiftModifier:
             self.stopSelection()
             return True
-
 
     def addop(self, t):
         self.Ops.append(t)
