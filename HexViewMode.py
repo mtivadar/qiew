@@ -527,6 +527,9 @@ class HexViewMode(ViewMode):
             offs = self.getCursorOffsetInPage()
 
             b = self.dataModel.getBYTE(self.dataModel.getOffset() + offs)
+            if b is None:
+                return
+                
             z = int(str(event.text()), 16)
 
             # compute nibble

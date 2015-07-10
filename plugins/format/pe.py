@@ -58,6 +58,7 @@ class PE(FileFormat):
         self.textDecorator = HighlightWideChar(self.textDecorator)
 
         if start:
+            # overlay
             self.textDecorator = RangePen(self.textDecorator, start, start + self.dataModel.getDataSize(), QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine), ignoreHighlights=False)
 
         for d in self.PE.OPTIONAL_HEADER.DATA_DIRECTORY:
@@ -661,6 +662,9 @@ class PE(FileFormat):
 
         self._viewMode.goTo(x)
 
+    def jump_overlay(self):
+        overlay = self.PE.get_overlay_data_start_offset()
+        self._viewMode.goTo(overlay)
 
     def skip_section_up(self):
         # cursor pozition in datamodel
@@ -753,6 +757,7 @@ class PE(FileFormat):
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("0"), parent, self.jump_overlay, self.jump_overlay)]
 
         self.writeData(self.w)
 
