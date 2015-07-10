@@ -38,6 +38,9 @@ class Selection(object):
         if not b:
             b = self.defaultBrush
 
+        if u - v == 0:
+            return
+
         t = u, v, b, o
 
         if type == SelectionType.NORMAL:
