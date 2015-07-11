@@ -652,9 +652,47 @@ class PE(FileFormat):
 
         # skip bytes of current value
 
-        b = self.dataModel.getBYTE(off)
-        while x < sizeOfData - 1 and self.dataModel.getQWORD(x) != 0:
-            x += 1
+        while x < sizeOfData - 8 and self.dataModel.getQWORD(x) != 0:
+            b = self.dataModel.getQWORD(x)
+            lastb = b & -b
+                  
+            pos = 0
+            if lastb & 0xFFFFFFFF == 0:
+                lastb >>= 32
+                pos += 4
+
+            if lastb & 0xFFFF == 0:
+                lastb >>=  16
+                pos += 2
+
+            if lastb & 0xFF == 0:
+                lastb >>= 8
+                pos += 1
+
+            x += (8 - pos + 1)
+
+            """
+            a little bit slower
+            if   lastb & 0xFF:
+                x+=8
+            elif lastb & 0xFF00:
+                x+=7
+            elif lastb & 0xFF0000:
+                x+=6
+            elif lastb & 0xFF000000:
+                x+=5
+            elif lastb & 0xFF00000000:
+                x+=4
+            elif lastb & 0xFF0000000000:
+                x+=3
+            elif lastb & 0xFF000000000000:
+                x+=2
+            elif lastb & 0xFF00000000000000:
+                x+=1
+            else:
+                x += 1
+            """
+            
 
         if x == off:
             if x < sizeOfData - 1:
