@@ -114,7 +114,7 @@ class ASMLine:
     
 class DisasmViewMode(ViewMode):
     def __init__(self, width, height, data, cursor, widget=None, plugin=None):
-        super(ViewMode, self).__init__()
+        super(DisasmViewMode, self).__init__()
 
         self.plugin = plugin
 
