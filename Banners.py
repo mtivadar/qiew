@@ -253,6 +253,20 @@ class BottomBanner(Banner):
         qp.drawLine(59 * self.fontWidth + 5, 0, 59 * self.fontWidth + 5, 50)
         qp.drawLine(71 * self.fontWidth + 5, 0, 71 * self.fontWidth + 5, 50)
 
+        if self.viewMode.selector.getCurrentSelection():
+            u, v = self.viewMode.selector.getCurrentSelection()
+            if u != v:
+                pen = QtGui.QPen(QtGui.QColor(51, 153, 255), 0, QtCore.Qt.SolidLine)
+                qp.setPen(pen)
+
+                cemu.writeAt(73, 0, 'Selection: ')
+                cemu.write('{0:x}:{1}'.format(u, v-u))
+        else:
+            pen = QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+
+            cemu.writeAt(73, 0, '<no selection>')
+
         """
         qp.drawLine(self.fontWidth*(len(pos) + 1) + 15, 0, self.fontWidth*(len(pos) + 1) + 15, 50)
         qp.drawLine(self.fontWidth*(len(pos + sd) + 1) + 3*15, 0, self.fontWidth*(len(pos + sd) + 1) + 3*15, 50)
