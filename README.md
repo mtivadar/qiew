@@ -9,6 +9,8 @@ features:
   * disassembler + referenced strings, API calls
   * "highlight all" for current text selection.
 
+[see wiki for key functions](https://github.com/mtivadar/qiew/wiki)
+
 ## Releases/Binaries
 Binaries [available](https://github.com/mtivadar/qiew/releases) for Windows AMD64, built with cx_Freeze
 
