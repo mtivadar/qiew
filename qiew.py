@@ -82,6 +82,8 @@ class Searchable(Observer):
     def _search(self, data, text, start, previous=False):
 
         self._lastText = text
+        if text == '':
+            return -1
 
         if not previous:
             idx1 = string.find(data, text, start)
