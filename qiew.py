@@ -11,6 +11,7 @@ from StringIO import *
 from PyQt4 import QtGui, QtCore, uic
 import mmap
 import binascii
+import string
 
 from TextDecorators import *
 from DataModel import *
@@ -26,14 +27,112 @@ from time import time
 import logging
 
 
-class binWidget(QtGui.QWidget):
+class Observable(object):
+    def __init__(self):
+        self.Callbacks = []
+
+    def addHandler(self, h):
+        if h not in self.Callbacks:
+            self.Callbacks.append(h)
+
+    def notify(self, viewMode):
+        for cbk in self.Callbacks:
+            cbk.changeViewMode(viewMode)
+
+
+class Observer(object):
+    def changeViewMode(self, viewMode):
+        self._viewMode = viewMode
+
+class Searchable(Observer):
+    def __init__(self, dataModel, viewMode):
+        self._viewMode = viewMode
+        self._dataModel = dataModel
+        self._lastIdx = -1
+        self._lastText = ''
+
+    def next(self, start=None):
+        data = self._dataModel.getData()
+        text = self._lastText
+
+        if not start:
+            idx = self._lastIdx + 1
+        else:
+            idx = start
+        
+        if idx > -1:
+            self._search(data, text, idx)
+
+    @property
+    def lastText(self):
+        return self._lastText
+    
+    def previous(self, start=None):
+        data = self._dataModel.getData()
+        text = self._lastText
+
+        if not start:
+            idx = self._lastIdx
+        else:
+            idx = start
+
+        if idx > -1:
+            self._search(data, text, idx, previous=True)
+
+    def _search(self, data, text, start, previous=False):
+
+        self._lastText = text
+
+        if not previous:
+            idx1 = string.find(data, text, start)
+            text1 = '\0'.join(text)
+
+            idx2 = string.find(data, text1, start)
+
+            idx = idx1
+            if idx1 == -1:
+                idx = idx2
+            else:
+                if idx2 < idx1 and idx2 != -1:
+                    idx = idx2
+
+        else:
+            idx1 = string.rfind(data, text, 0, start)
+            text1 = '\0'.join(text)
+
+            idx2 = string.rfind(data, text1, 0, start)
+
+            idx = idx1
+
+            if idx1 == -1:
+                idx = idx2
+            else:
+                if idx2 > idx1 and idx2 != -1:
+                    idx = idx2
+
+        if idx > -1:
+            self._lastIdx = idx
+
+        if idx > -1:
+            self._viewMode.selector.addSelection((idx, idx + len(text), QtGui.QBrush(QtGui.QColor(125, 0, 100)), 0.8) , type=TextSelection.SelectionType.NORMAL)
+            self._viewMode.goTo(idx)
+
+        return idx
+
+
+    def search(self, text):
+        data = self._dataModel.getData()
+        return self._search(data, text, 0)
+
+
+class binWidget(QtGui.QWidget, Observable):
   
     scrolled = QtCore.pyqtSignal(int, name='scroll')
     oldscrolled = QtCore.SIGNAL('scroll')
 
     def __init__(self, parent, source):
         super(binWidget, self).__init__()
-
+        Observable.__init__(self)
         self.parent = parent
         
         # offset for text window
@@ -104,12 +203,14 @@ class binWidget(QtGui.QWidget):
         # self.offsetWindow_h = self.filebanner.getDesiredGeometry()[0] + 25
         self.offsetWindow_h = 0
         self.offsetWindow_v = 0
+        self.searchable = Searchable(self.dataModel, self.viewMode)
+
 
         self.initUI()
         
-        po.init(self.viewMode)
+        [po.init(viewMode) for viewMode in self.multipleViewModes]
+
         for banner in po.getBanners():
-            #self.Banners.add(banner(self.dataModel, self.viewMode))
             self.Banners.add(banner)
         
         po.registerShortcuts(self)
@@ -117,11 +218,17 @@ class binWidget(QtGui.QWidget):
 
         #self.scrolled = QtCore.pyqtSignal(int, name='scroll')
         #self.scrolled.connect(self.scroll_from_outside)
+        self.searchWindow = SearchWindow(self, None, self.searchable)
 
-        self.connect(self, self.oldscrolled, self.scroll_from_outside)
+        self.addHandler(self.po)
+        self.addHandler(self.searchable)
+        self.addHandler(self.Banners)
+
+        self.notify(self.viewMode)
+
+        #self.connect(self, self.oldscrolled, self.scroll_from_outside)
         #self.scrolled.emit(1)
-        self.emit(QtCore.SIGNAL('scroll'), 1)        
-
+        #self.emit(QtCore.SIGNAL('scroll'), 1)        
 
     def scroll_from_outside(self, i):
         #print 'slot-signal ' + str(i)
@@ -135,6 +242,7 @@ class binWidget(QtGui.QWidget):
         self.setFocus()
 
         self.installEventFilter(self)
+
     """        
             # build thumbnail
 
@@ -176,11 +284,9 @@ class binWidget(QtGui.QWidget):
     def switchViewMode(self):
         self.multipleViewModes = self.multipleViewModes[1:] + [self.multipleViewModes[0]]
         self.viewMode = self.multipleViewModes[0]
-        self.po.init(self.viewMode)
-        self.Banners.setViewMode(self.viewMode)
-        #self.banner.setViewMode(self.viewMode)
-        #self.filebanner.setViewMode(self.viewMode)        
 
+        # notify obervers
+        self.notify(self.viewMode)
 
     def _resize(self):
 
@@ -296,6 +402,18 @@ class binWidget(QtGui.QWidget):
                 self.w = WHeaders(self, None)
                 self.w.show()
 
+
+            if not self.viewMode.isInEditMode():
+                if key == QtCore.Qt.Key_Slash:
+                    self.searchWindow.show()
+
+                if key == QtCore.Qt.Key_N:
+                    self.searchable.next(self.viewMode.getCursorAbsolutePosition() + 1)
+
+                if key == QtCore.Qt.Key_B:
+                    self.searchable.previous(self.viewMode.getCursorAbsolutePosition())
+
+            # handle keys to view plugin
             if self.viewMode.handleKeyEvent(modifiers, key, event=event):
                 self.update()
 
@@ -451,6 +569,87 @@ class WHeaders(QtGui.QDialog):
 
         self.close()
 
+
+
+class SearchWindow(QtGui.QDialog):
+    
+    def __init__(self, parent, plugin, searchable):
+        super(SearchWindow, self).__init__(parent)
+        self.searchable = searchable
+        self.parent = parent
+        self.plugin = plugin
+        self.oshow = super(SearchWindow, self).show
+
+        root = os.path.dirname(sys.argv[0])
+
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'search.ui'), baseinstance=self)
+        self.ui.setWindowTitle('Search')
+        self._lastText = ''
+
+        self.initUI()
+
+    def show(self):
+        # TODO: remember position? resize plugin windows when parent resize?
+
+        width = self.ui.size().width()+15
+        height = self.ui.size().height()+15
+
+        self.move((self.parent.width() -  width)/ 2, (self.parent.height() -  height)/ 2)
+        self.ui.lineEdit.setText(self._lastText)
+        self.ui.lineEdit.selectAll()
+        self.oshow()
+
+    def initUI(self):
+
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("/"), self, self.close, self.close)
+
+        QtCore.QObject.connect(self.ui.pushButton, QtCore.SIGNAL('clicked()'), self.onClicked)
+
+        width = self.ui.size().width()+15
+        height = self.ui.size().height()+15
+        self.setFixedSize(width, height)
+
+
+    def onClicked(self):
+        text = self.ui.lineEdit.text()  
+        text = unicode(text)
+
+        hexstr = '0123456789abcdefABCDEF'
+        if self.ui.checkHex.isChecked():
+            T = text.split(' ')
+            oldtext = text
+            text = ''
+            for t in T:
+                if len(t) != 2:
+                    reply = QtGui.QMessageBox.warning(self, 'Qiew', "Hex string with errors.", QtGui.QMessageBox.Ok)
+                    self.close()
+                    return
+
+                if t[0] in hexstr and t[1] in hexstr:
+                    o = int(t, 16)
+                    text += chr(o)
+                else:
+                    reply = QtGui.QMessageBox.warning(self, 'Qiew', "Hex string with errors.", QtGui.QMessageBox.Ok)
+                    self.close()
+                    return
+
+
+            self._lastText = oldtext
+
+        else:
+            self._lastText = text
+
+        if self.ui.checkHex.isChecked() == False:
+            text = text.encode('utf-8')
+
+        idx = self.searchable.search(text)
+        if idx == -1:
+            reply = QtGui.QMessageBox.warning(self, 'Qiew', "Nothing found.", QtGui.QMessageBox.Ok)
+
+        self.parent.viewMode.draw(refresh=True)
+        self.close()
 
 class Qiew(QtGui.QWidget):
     
