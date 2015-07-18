@@ -25,7 +25,13 @@ class Banner(object):
 
 Orientation = enum(Left=0, Bottom=1, Top=2)
 
-class Banners:
+
+
+class Observer(object):
+    def changeViewMode(self, viewMode):
+        self.setViewMode(viewMode)
+
+class Banners(Observer):
     BOTTOM_SEPARATOR = 5
 
     def __init__(self):

@@ -4,6 +4,11 @@ from PyQt4 import QtGui, QtCore
 import PyQt4
 import os, sys
 
+class Observer:
+    def changeViewMode(self, viewMode):
+        self._viewMode = viewMode
+        self.viewMode = viewMode
+        #NotImplementedError('method not implemented.')
 
 class IDisasm():
 
@@ -26,7 +31,7 @@ class IDisasm():
         return None
 
 
-class FileFormat(IPlugin, IDisasm):
+class FileFormat(IPlugin, IDisasm, Observer):
     name = ''
     _Shortcuts = []
 
