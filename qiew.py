@@ -430,7 +430,7 @@ class binWidget(QtGui.QWidget, Observable):
         return self.dataModel.isDirty()
 
     def save(self):
-        self.dataModel.flush()
+        return self.dataModel.flush()
 
 class WHeaders(QtGui.QDialog):
     
@@ -669,7 +669,8 @@ class Qiew(QtGui.QWidget):
                          quit_msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No, QtGui.QMessageBox.Cancel)
 
         if reply == QtGui.QMessageBox.Yes:
-            self.wid.save()
+            if self.wid.save() == False:
+                print 'File not saved!'
             event.accept()
         elif reply == QtGui.QMessageBox.No:
             event.accept()
