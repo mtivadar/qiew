@@ -11,6 +11,8 @@ features:
 
 [see wiki for key functions](https://github.com/mtivadar/qiew/wiki)
 
+This program is licensed under [GPLv2](http://www.gnu.org/licenses/gpl-2.0.en.html).
+
 ## Releases/Binaries
 Binaries [available](https://github.com/mtivadar/qiew/releases) for Windows AMD64, built with cx_Freeze
 
