@@ -1,0 +1,9 @@
+Qiew - Hex viewer/editor, disassembler, with capabilities to read PE file format and display useful information for malware analysis. 
+available formats by now: PE, bootsector, binary (default)
+
+Written in python+qt, should work on Windows, Linux, MAC OSX.
+Terminus font is needed: http://sourceforge.net/projects/terminus-font/files/terminus-font-4.39/terminus-font-4.39.exe/download
+
+read wiki page for more information: https://github.com/mtivadar/qiew/wiki
+
+Marius TIVADAR (c) 2014, licensed under GPLv2
