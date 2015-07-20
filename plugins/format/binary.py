@@ -70,9 +70,21 @@ class Binary(FileFormat):
             return
 
         # skip bytes of current value
+#        import time
 
-        b = self.dataModel.getBYTE(off)
-        while x < sizeOfData - 1 and self.dataModel.getBYTE(x) == b:
+        BYTES = 512
+#        k = time.time()
+        b = self.dataModel.getStream(off, off + 1)
+        z = b * BYTES
+
+        # compare stream of bytes
+        z = self.dataModel.getStream(off, off+BYTES)
+        while x < sizeOfData - BYTES and self.dataModel.getStream(x, x + BYTES) == z:
+            x += BYTES
+
+        while x < sizeOfData - 1 and self.dataModel.getBYTE(x) == ord(b):
             x += 1
+
+#        print time.time() - k
 
         self._viewMode.goTo(x)
