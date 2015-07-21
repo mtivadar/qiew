@@ -52,12 +52,38 @@ class Binary(FileFormat):
         self.w = DialogGoto(parent, self)
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)]
         self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
+        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
 
     def _showit(self):
         if not self.w.isVisible():
             self.w.show()
         else:
             self.w.hide()
+
+    def skip_block(self):
+
+        off = self._viewMode.getCursorAbsolutePosition()
+
+        x = off
+
+        sizeOfData = self.dataModel.getDataSize()
+        if x >= sizeOfData:
+            return
+
+        import string
+
+        x = string.find(self.dataModel.getData(), '\x00'*8, off)
+        if x == -1:
+            x = off
+
+
+        if x == off:
+            if x < sizeOfData - 1:
+                x += 1
+
+        self._viewMode.goTo(x)
+
+        return
 
     def skip_chars(self):
 
