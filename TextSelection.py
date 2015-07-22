@@ -78,6 +78,9 @@ class Selection(object):
         if self.selecting:
             self.drawSelection(qp, *self.getCurrentSelection())
 
+    def resetSelections(self):
+        self.Selections = []
+
     def startSelection(self):
         if self.selecting == False:
             self.selecting = True
@@ -88,7 +91,7 @@ class Selection(object):
     def getCurrentSelection(self):
         if self.selecting:
             a = self.selectionStartOffset
-            b = self.viewMode.getCursorAbsolutePosition()
+            b = self.viewMode.getCursorAbsolutePosition() + 1
             if a < b:
                 return a, b
             else:
