@@ -592,6 +592,11 @@ class HexViewMode(ViewMode):
 
     def handleKeyEvent(self, modifiers, key, event=None):
 
+        if modifiers == QtCore.Qt.ShiftModifier:
+            keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up, QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
+            if key in keys:
+                self.startSelection()
+
         if modifiers == QtCore.Qt.ControlModifier:
 
             if key == QtCore.Qt.Key_Right:
@@ -618,6 +623,10 @@ class HexViewMode(ViewMode):
             return True
 
         else:#selif modifiers == QtCore.Qt.NoModifier:
+
+            if key == QtCore.Qt.Key_Escape:
+                self.selector.resetSelections()
+                self.addop((self.draw,))
 
             if key == QtCore.Qt.Key_Left:
                 self.moveCursor(Directions.Left)
@@ -688,7 +697,7 @@ class HexViewMode(ViewMode):
 
     def handleKeyPressEvent(self, modifier, key):
         if modifier == QtCore.Qt.ShiftModifier:
-            self.startSelection()
+#            self.startSelection()
             return True
 
     def handleKeyReleaseEvent(self, modifier, key):
