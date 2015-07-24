@@ -1,0 +1,9 @@
+[Core]
+Name = basic
+Module = basic
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = ROL/ROR/XOR/ADD/SUB

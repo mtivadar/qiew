@@ -1,0 +1,9 @@
+[Core]
+Name = rc4
+Module = enc_rc4
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = RC4 decrypt
