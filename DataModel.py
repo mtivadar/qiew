@@ -162,6 +162,11 @@ class DataModel(object, Observer):
 
         return False
 
+    def setData_s(self, u, v, s):
+        self.data[u:v] = s
+        self._dirty = True
+        return True
+
     def getDataSize(self):
         return len(self.data)
 
