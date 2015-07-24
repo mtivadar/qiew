@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>256</width>
+    <width>339</width>
     <height>121</height>
    </rect>
   </property>
@@ -22,7 +22,7 @@
   <widget class="QLineEdit" name="key">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>90</x>
      <y>40</y>
      <width>211</width>
      <height>22</height>
@@ -35,7 +35,7 @@
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>20</x>
+     <x>90</x>
      <y>20</y>
      <width>61</width>
      <height>16</height>
@@ -43,6 +43,39 @@
    </property>
    <property name="text">
     <string>Key</string>
+   </property>
+  </widget>
+  <widget class="QComboBox" name="op">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>40</y>
+     <width>73</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <item>
+    <property name="text">
+     <string>String</string>
+    </property>
+   </item>
+   <item>
+    <property name="text">
+     <string>Hex</string>
+    </property>
+   </item>
+  </widget>
+  <widget class="QLabel" name="label_3">
+   <property name="geometry">
+    <rect>
+     <x>10</x>
+     <y>20</y>
+     <width>61</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Type</string>
    </property>
   </widget>
  </widget>

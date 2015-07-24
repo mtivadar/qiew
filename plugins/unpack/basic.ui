@@ -238,6 +238,14 @@
    </property>
   </widget>
  </widget>
+ <tabstops>
+  <tabstop>op</tabstop>
+  <tabstop>key</tabstop>
+  <tabstop>keyop</tabstop>
+  <tabstop>delta</tabstop>
+  <tabstop>bytes</tabstop>
+  <tabstop>skip</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

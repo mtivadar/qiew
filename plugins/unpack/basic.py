@@ -1,4 +1,4 @@
-from UnpackPlugin import *
+import UnpackPlugin
 from PyQt4.QtGui import *
 
 from PyQt4 import QtGui, QtCore
@@ -6,55 +6,8 @@ import PyQt4
 import sys, os
 
 
-class MyValidator(QValidator):
-    def __init__(self, parent=None):
-        super(MyValidator, self).__init__(parent)
 
-    def validate(self, c, pos):
-        c = str(c)
-        k = pos - 1
-
-        def _validate(s, k):
-            color = '#ffffff'
-            YELLOW = '#fff79a'
-
-            # accept empty string
-            if s == '':
-                return (QValidator.Acceptable, color)
-
-            # must be hex digits, or 'x' on second position
-            if s[k] not in ' 0123456789abcdefABCDEFx':
-                return (QValidator.Invalid, color)
-            else:
-                if s[k] == 'x' and k != 1:
-                    return (QValidator.Invalid, color)  
-
-            # if we have spaces, must be of form XX XX XX XX
-            if ' ' in s:
-                L = s.split(' ')
-                for l in L:
-                    if len(l) != 2:
-                        return (QValidator.Acceptable, YELLOW)
-
-                return (QValidator.Acceptable, color)                        
-
-            # else, try at least to convert it to a number
-            try:
-                x = int(s, 0)
-            except ValueError:
-                return (QValidator.Acceptable, YELLOW)
-
-
-            return (QValidator.Acceptable, color)
-
-        state, color = _validate(c, k)
-        if state == QValidator.Acceptable:
-            self.parent().setStyleSheet('QLineEdit {{ background-color: {} }}'.format(color))
-
-        return (state, k + 1)
-
-
-class basic(UnpackPlugin):
+class basic(UnpackPlugin.DecryptPlugin):
     priority = 0
 
     def init(self, dataModel, viewMode):
@@ -63,40 +16,16 @@ class basic(UnpackPlugin):
         self.ui = PyQt4.uic.loadUi(os.path.join('.', 'plugins', 'unpack', 'basic.ui'))
 
         self.ui.key.textChanged.connect(self._keychanged)
-        self.ui.key.setValidator(MyValidator(self.ui.key))
-        self.ui.delta.setValidator(MyValidator(self.ui.delta))
+        self.ui.key.setValidator(UnpackPlugin.MyValidator(self.ui.key))
+        self.ui.delta.setValidator(UnpackPlugin.MyValidator(self.ui.delta))
 
         return True
 
 
-    def _convert(self, s):
-        try:
-            x = int(s, 0)
-        except ValueError:
-            x = None
-
-        if not x:
-            x = 0
-            L = s.split(' ')
-            for i, l in enumerate(L):
-                if len(l) != 2:
-                    return 0
-                else:
-                    try:
-                        z = int('0x' + l, 0)
-                    except ValueError:
-                        return 0
-
-                    z = z << 8*i
-                    x = x | z
-
-
-        return x
-
     def _keychanged(self, key):
         key = str(key)
         if key:
-            key = self._convert(key)
+            key = UnpackPlugin._convert(key)
         else:
             key = 0
 
@@ -139,7 +68,7 @@ class basic(UnpackPlugin):
             op = str(self.ui.op.currentText())
             key = str(self.ui.key.text())
             if key:
-                key = self._convert(str(self.ui.key.text()))
+                key = UnpackPlugin._convert(str(self.ui.key.text()))
             else:
                 key = 0
 
@@ -147,7 +76,7 @@ class basic(UnpackPlugin):
 
             delta = str(self.ui.delta.text())
             if delta:
-                delta = self._convert(str(self.ui.delta.text()))
+                delta = UnpackPlugin._convert(str(self.ui.delta.text()))
             else:
                 delta = 0
 
@@ -193,7 +122,7 @@ class basic(UnpackPlugin):
 
                 if keyop != '---':
                     # compute key size in bytes
-                    keysize = (key.bit_length() + (8 - key.bit_length()%8))/8
+                    keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
 
                     key = OP[keyop](key, delta, keysize)
 
