@@ -23,9 +23,11 @@ class rc4(UnpackPlugin.DecryptPlugin):
     	text = str(text)
 
     	if text == 'Hex':
+    		# hex validator
     		self.ui.key.setText('')
     		self.ui.key.setValidator(UnpackPlugin.MyValidator(self.ui.key))
     	else:
+    		# no validator for string
     		self.ui.key.setText('')
     		self.ui.key.setValidator(None)
 
@@ -52,6 +54,8 @@ class rc4(UnpackPlugin.DecryptPlugin):
     	op = str(op)
 
     	key = str(self.ui.key.text())
+    	if key == '':
+    		return False
 
     	if op == 'Hex':
     		key = UnpackPlugin._convert(key)
@@ -60,6 +64,9 @@ class rc4(UnpackPlugin.DecryptPlugin):
     		i = 0
 
     		out = ''
+    		if keysize == 0:
+    			out += '\x00'
+
     		# ugly, but it's ok, string is small
     		while i < keysize:
     			out += chr(key & 0xFF)
