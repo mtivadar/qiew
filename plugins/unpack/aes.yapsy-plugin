@@ -1,0 +1,9 @@
+[Core]
+Name = aes
+Module = enc_aes
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = AES decrypt
