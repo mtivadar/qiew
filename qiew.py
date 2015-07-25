@@ -22,6 +22,7 @@ from Banners import *
 
 from yapsy.PluginManager import PluginManager
 from FileFormat import *
+from UnpackPlugin import *
 
 from time import time
 import logging
@@ -397,6 +398,10 @@ class binWidget(QtGui.QWidget, Observable):
                     del pyperclip
                     #print array
 
+                if key == QtCore.Qt.Key_F4:
+                    self.unp = WUnpack(self, None)
+                    self.unp.show()
+
 
             if key == QtCore.Qt.Key_F10:
                 self.dataModel.flush()
@@ -431,6 +436,108 @@ class binWidget(QtGui.QWidget, Observable):
 
     def save(self):
         return self.dataModel.flush()
+
+
+
+class WUnpack(QtGui.QDialog):
+    
+    def __init__(self, parent, plugin):
+        super(WUnpack, self).__init__(parent)
+        
+        self.parent = parent
+        self.plugin = plugin
+        self.oshow = super(WUnpack, self).show
+
+        root = os.path.dirname(sys.argv[0])
+
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'unpack.ui'), baseinstance=self)
+
+
+        self.ui.setWindowTitle('Decrypt/Encrypt')
+
+
+        self.manager = PluginManager(categories_filter={ "UnpackPlugin": DecryptPlugin})
+
+        root = os.path.dirname(sys.argv[0])
+        self.manager.setPluginPlaces([os.path.join(root, 'plugins', 'unpack')])
+        #self.manager.setPluginPlaces(["plugins"])
+
+        # Load plugins
+        self.manager.locatePlugins()
+        self.manager.loadPlugins()
+
+        self.Plugins = {}
+        Formats = []
+        for plugin in self.manager.getPluginsOfCategory("UnpackPlugin"):
+            # plugin.plugin_object is an instance of the plugin
+            po = plugin.plugin_object
+            if po.init(self.parent.dataModel, self.parent.viewMode):
+                self.Plugins[plugin.name] = po
+                #self.ui.horizontalLayout.addWidget(po.getUI())
+                print '[+] ' + plugin.name
+                self.ui.listWidget.addItem(plugin.name)
+                #Formats.append(po)
+
+        self.ui.listWidget.currentItemChanged.connect(self.item_clicked)
+        self.ui.listWidget.setCurrentRow(0)
+
+        self.ui.connect(self.ui.proceed, PyQt4.QtCore.SIGNAL("clicked()"), self.handleProceed)
+
+        self.initUI()
+
+    def handleProceed(self):
+        item = str(self.ui.listWidget.currentItem().text())
+        self.Plugins[item].proceed()
+        #self.parent.update()
+        self.parent.viewMode.draw(refresh=True)
+        self.parent.update()
+
+    def item_clicked(self, current, previous):
+        #item = str(self.ui.listWidget.currentItem().text())
+        item = str(current.text())
+        if previous:
+            x = self.ui.horizontalLayout.takeAt(0)
+            while x:
+                x.widget().setParent(None)
+                x = self.ui.horizontalLayout.takeAt(0)
+                
+            prev = str(previous.text())
+            #print prev
+            #self.ui.horizontalLayout.removeWidget(self.Plugins[prev].getUI())
+
+        if item:
+            #print item
+            po = self.Plugins[item]
+            self.ui.horizontalLayout.addWidget(po.getUI())
+        
+
+    def show(self):
+
+        # TODO: remember position? resize plugin windows when parent resize?
+        pwidth = self.parent.parent.size().width()
+        pheight = self.parent.parent.size().height()
+
+        width = self.ui.size().width()+15
+        height = self.ui.size().height()+15
+
+        self.setGeometry(pwidth - width - 15, pheight - height, width, height)
+        self.setFixedSize(width, height)
+
+        self.oshow()
+
+    def initUI(self):      
+
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F4"), self, self.close, self.close)
+        #QtCore.QObject.connect(self.ui.ok, QtCore.SIGNAL('clicked()'), self.onClicked)
+
+    def onClicked(self):
+        
+        dataModel = self.parent.dataModel
+        self.close()
+
+
 
 class WHeaders(QtGui.QDialog):
     
