@@ -67,6 +67,7 @@ class basic(UnpackPlugin.DecryptPlugin):
             # prepare values vrom text boxes            
             op = str(self.ui.op.currentText())
             key = str(self.ui.key.text())
+            
             if key:
                 key = UnpackPlugin._convert(str(self.ui.key.text()))
             else:
@@ -74,6 +75,7 @@ class basic(UnpackPlugin.DecryptPlugin):
 
             keyop = str(self.ui.keyop.currentText())
 
+            # get delta
             delta = str(self.ui.delta.text())
             if delta:
                 delta = UnpackPlugin._convert(str(self.ui.delta.text()))
@@ -102,6 +104,7 @@ class basic(UnpackPlugin.DecryptPlugin):
             OP['ADD'] = self._add
             OP['SUB'] = self._sub
             OP['XOR'] = self._xor
+            OP['---'] = lambda key, delta, keysize: key
 
             i = 0
             while i < v-u:
@@ -120,11 +123,9 @@ class basic(UnpackPlugin.DecryptPlugin):
 
                 b = OP[op](b, key, size)
 
-                if keyop != '---':
-                    # compute key size in bytes
-                    keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
-
-                    key = OP[keyop](key, delta, keysize)
+                # compute key size in bytes
+                keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
+                key = OP[keyop](key, delta, keysize)
 
                 j = 0
                 # ugly again
