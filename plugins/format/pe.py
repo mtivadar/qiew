@@ -57,6 +57,9 @@ class PE(FileFormat):
         self.textDecorator = HighlightPrefix(self.textDecorator, '\xFF\x15', additionalLength=4, brush=self.grayBrush, pen=self.whitePen)
         self.textDecorator = HighlightWideChar(self.textDecorator)
 
+        ep = self.PE.get_offset_from_rva(self.PE.OPTIONAL_HEADER.AddressOfEntryPoint)
+        self.viewMode.selector.addSelection((ep, ep + 30, QtGui.QBrush(QtGui.QColor(51, 153, 255)), 0.5), type=TextSelection.SelectionType.PERMANENT)
+
         if start:
             # overlay
             self.textDecorator = RangePen(self.textDecorator, start, start + self.dataModel.getDataSize(), QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine), ignoreHighlights=False)
