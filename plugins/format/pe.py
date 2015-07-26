@@ -83,6 +83,55 @@ class PE(FileFormat):
     def hintDisasmVA(self, offset):
         return self.getVA(offset)
 
+    def hintBanner(self, offset):
+        if offset >= self.PE.DOS_HEADER.get_file_offset() and offset < self.PE.DOS_HEADER.sizeof():
+            name = 'DOS header'
+            return name
+
+        base = self.PE.FILE_HEADER.get_file_offset()
+        if offset >= base and offset < base + self.PE.FILE_HEADER.sizeof():
+            name = 'File header'
+            return name
+
+        base = self.PE.OPTIONAL_HEADER.get_file_offset()
+        end = base + self.PE.OPTIONAL_HEADER.sizeof() + len(self.PE.OPTIONAL_HEADER.DATA_DIRECTORY) * 8
+
+
+        if offset >= base and offset < end:
+            name = 'Opt. header'
+            return name
+
+        # section headers
+        if offset >= end and offset < (end + len(self.PE.sections) * 0x28):
+            name = 'Section header'
+            return name
+
+        DirectoryNames = ['Export', 'Import', 'Resource', 'Exception', 'Security', 'BaseReloc', 'Debug', 'Copyright', 'GlobalPtr', 'TLS', 'LoadConfig', 'BoundImport', 'IAT',
+                          'DelayedImports', 'COM Descr.', 'Reserved']
+
+        end += len(self.PE.sections) * 0x28
+        for i, o in enumerate(self.PE.OPTIONAL_HEADER.DATA_DIRECTORY):
+            if o.VirtualAddress != 0 and o.Size != 0:
+                s = self.PE.get_offset_from_rva(o.VirtualAddress)
+                e = s + o.Size
+                if offset >= s and offset < e:
+                    name = DirectoryNames[i]
+                    return name
+
+
+        if self.PE.get_overlay_data_start_offset() is not None:
+            if offset >= self.PE.get_overlay_data_start_offset():
+                name = 'Overlay'
+                return name
+
+        name = self.PE.get_section_by_offset(offset)
+        if name is None:
+            name = ''
+        else:
+            name = name.Name
+            
+        return name
+
     def stringFromVA(self, va):
         try:
            offset = self.PE.get_offset_from_rva(va - self.PE.OPTIONAL_HEADER.ImageBase)
@@ -149,7 +198,7 @@ class PE(FileFormat):
 
 
     def getBanners(self):
-        self.banners = [PEBanner(self.dataModel, self.viewMode, self), PEHeaderBanner(self.dataModel, self.viewMode, self)]
+        self.banners = [PEBanner(self.dataModel, self.viewMode, self), PEHeaderBanner(self.dataModel, self.viewMode, self), PEBottomBanner(self.dataModel, self.viewMode, self)]
         return self.banners
    
     def writeData(self, w):
@@ -905,6 +954,30 @@ class ImportsEventFilter(QtCore.QObject):
 
         return False
 
+class ExportsEventFilter(QtCore.QObject):
+    def __init__(self, plugin, widget):
+        super(QtCore.QObject, self).__init__()
+        self.widget = widget
+        self.plugin = plugin
+
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key() == QtCore.Qt.Key_Return:
+
+                # get RVA column from treeView
+                item = self.widget.currentItem()
+                rva = self.widget.indexFromItem(item, 1).data().toString()
+                if rva:
+                    rva = str(rva)
+                    # strip 0x
+                    rva = int(rva, 0)
+
+                    offset = self.plugin.PE.get_offset_from_rva(rva)
+
+                    self.plugin._viewMode.goTo(offset)
+
+        return False
+
 
 class SectionsEventFilter(QtCore.QObject):
     def __init__(self, plugin, widget):
@@ -1034,6 +1107,9 @@ class WHeaders(QtGui.QDialog):
         self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
         self.ui.treeWidgetImports.installEventFilter(self.ei)
 
+        self.ee = ExportsEventFilter(plugin, self.ui.treeWidgetExports)
+        self.ui.treeWidgetExports.installEventFilter(self.ee)
+
         self.es = SectionsEventFilter(plugin, self.ui.treeWidgetSections)
         self.ui.treeWidgetSections.installEventFilter(self.es)
 
@@ -1090,6 +1166,100 @@ class WHeaders(QtGui.QDialog):
         return True
     """        
 #        self.setWindowFlags()
+
+class PEBottomBanner(Banners.BottomBanner):
+    def __init__(self, dataModel, viewMode, plugin):
+        self.plugin = plugin
+        super(PEBottomBanner, self).__init__(dataModel, viewMode)
+        self.gray = QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine)
+        self.yellow = self.textPen
+        self.purple = QtGui.QPen(QtGui.QColor(172, 129, 255), 0, QtCore.Qt.SolidLine)
+
+    def draw(self):
+        qp = QtGui.QPainter()
+        qp.begin(self.qpix)
+
+        qp.fillRect(0, 0, self.width,  self.height, self.backgroundBrush)
+        qp.setPen(self.textPen)
+        qp.setFont(self.font)
+
+        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+
+        dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
+        if dword is None:
+            dword = '----'
+
+        sd = 'DWORD: {0}'.format(dword)
+
+        pos = 'POS: {0:08x}'.format(self.viewMode.getCursorAbsolutePosition())
+
+
+
+        qword = self.dataModel.getQWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
+        if qword is None:
+            qword = '----'
+        sq = 'QWORD: {0}'.format(qword)
+
+        byte = self.dataModel.getBYTE(self.viewMode.getCursorAbsolutePosition(), asString=True)
+        if byte is None:
+            byte = '-'
+
+        sb = 'BYTE: {0}'.format(byte)
+
+        cemu.writeAt(1,  0, pos)
+        cemu.writeAt(17, 0, sd)
+        cemu.writeAt(35, 0, sq)
+        cemu.writeAt(62, 0, sb)
+
+        qp.drawLine(15 * self.fontWidth + 5, 0, 15 * self.fontWidth + 5, 50)
+        qp.drawLine(33 * self.fontWidth + 5, 0, 33 * self.fontWidth + 5, 50)
+        qp.drawLine(59 * self.fontWidth + 5, 0, 59 * self.fontWidth + 5, 50)
+        qp.drawLine(71 * self.fontWidth + 5, 0, 71 * self.fontWidth + 5, 50)
+
+        sel = None
+        hint = self.plugin.hintBanner(self.viewMode.getCursorAbsolutePosition())
+        qp.setPen(self.purple)
+        cemu.writeAt(73, 1, hint)
+
+        sel = '<no selection>'
+        if self.viewMode.selector.getCurrentSelection():
+            u, v = self.viewMode.selector.getCurrentSelection()
+            if u != v:
+                pen = QtGui.QPen(QtGui.QColor(51, 153, 255), 0, QtCore.Qt.SolidLine)
+                qp.setPen(pen)
+
+                #cemu.writeAt(73, 0, 'Selection: ')
+                sel = 'Selection: {0:x}:{1}'.format(u, v-u)
+                cemu.writeAt(73, 0, sel)
+        else:
+            pen = QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine)
+            qp.setPen(pen)
+
+            sel = '<no selection>'
+            cemu.writeAt(73, 0, sel)
+
+        off = 1
+        if sel:
+            off += len(sel)
+
+        ovr_line_off = (73 + off) * self.fontWidth + 5
+
+        qp.setPen(self.yellow)
+        qp.drawLine(ovr_line_off, 0, ovr_line_off, 50)
+
+        start = self.plugin.PE.get_overlay_data_start_offset()
+
+        if start > 0:
+            qp.setPen(self.gray)
+            overlay = 'overlay: {0:,} bytes'.format(start)
+
+            if sel:
+                off = 73 + 3 + len(sel)
+
+            cemu.writeAt(off, 0, 'overlay: {0:,} bytes'.format(start))
+            cemu.writeAt(off, 1, '         {0}%'.format(start*100/self.dataModel.size()))
+        
+        qp.end()
 
 
 class PEHeaderBanner(Banners.TopBanner):
