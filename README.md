@@ -25,7 +25,7 @@ and install [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download).
 
 Otherwise run
 ```
-pip install pefile pyperclip
+pip install pefile pyperclip pyaes
 ```
 and manually install [**diStorm3**](https://code.google.com/p/distorm/downloads/list) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
 
