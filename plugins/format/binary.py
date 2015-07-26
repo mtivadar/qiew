@@ -45,7 +45,7 @@ class Binary(FileFormat):
         return va
         
     def getBanners(self):
-        return [Banners.FileAddrBanner(self.dataModel, self._viewMode), Banners.TopBanner(self.dataModel, self._viewMode)]
+        return [Banners.FileAddrBanner(self.dataModel, self._viewMode), Banners.TopBanner(self.dataModel, self._viewMode), Banners.BottomBanner(self.dataModel, self._viewMode)]
 
     def registerShortcuts(self, parent):
         self._parent = parent
