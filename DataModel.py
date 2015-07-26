@@ -1,4 +1,4 @@
-import sys
+import sys, os
 import mmap
 
 class Observer:
@@ -183,6 +183,9 @@ class DataModel(object, Observer):
     def close(self):
         pass
 
+    def size(self):
+        pass
+
 class FileDataModel(DataModel):
     def __init__(self, filename):
         self._filename = filename
@@ -217,3 +220,6 @@ class FileDataModel(DataModel):
     def write(self, offset, stream):
         self._mapped.seek(offset)
         self._mapped.write(stream)
+
+    def size(self):
+        return os.path.getsize(self._filename)
