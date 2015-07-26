@@ -192,7 +192,7 @@ class binWidget(QtGui.QWidget, Observable):
 
         self.Banners = Banners()
 
-        self.Banners.add(BottomBanner(self.dataModel, self.viewMode))
+        #self.Banners.add(BottomBanner(self.dataModel, self.viewMode))
 #        self.Banners.add(TopBanner(self.dataModel, self.viewMode))
 
 
