@@ -118,7 +118,7 @@ class aes(UnpackPlugin.DecryptPlugin):
                 else:
                     ciphertext = aes.decrypt(block)
 
-                self.dataModel.setData_s(k, k+16, ciphertext)
+                self.dataModel.setData_s(u+k, u+k+16, ciphertext)
 
                 k += 16
                 #0123456789abcdef
