@@ -42,6 +42,6 @@ and manually install [**diStorm3**](https://code.google.com/p/distorm/downloads/
 ## Disassembly view mode
 ![disasmview](https://github.com/mtivadar/qiew/blob/master/wiki/disasmview.png)
 
-Powered by: Python, Qt4, Terminus font, pefile, distorm
+Powered by: Python, Qt4, [Terminus font](http://terminus-font.sourceforge.net/), [pefile](https://github.com/erocarrera/pefil), [distorm](https://github.com/gdabah/distorm)
 
 [see wiki](https://github.com/mtivadar/qiew/wiki)
