@@ -17,6 +17,8 @@ This program is licensed under [GPLv2](http://www.gnu.org/licenses/gpl-2.0.en.ht
 Binaries [available](https://github.com/mtivadar/qiew/releases) for Windows AMD64, built with cx_Freeze
 
 ## Installation from sources
+Install [Terminus font](http://terminus-font.sourceforge.net/), for Windows users download from [here](http://sourceforge.net/projects/terminus-font/files/terminus-font-4.39/terminus-font-4.39.exe/download).
+
 If you have a C compiler run 
 ```
 pip install -r requirements.txt
