@@ -1177,6 +1177,8 @@ class PEBottomBanner(Banners.BottomBanner):
         self.gray = QtGui.QPen(QtGui.QColor(128, 128, 128), 0, QtCore.Qt.SolidLine)
         self.yellow = self.textPen
         self.purple = QtGui.QPen(QtGui.QColor(172, 129, 255), 0, QtCore.Qt.SolidLine)
+        self.editmode = QtGui.QPen(QtGui.QColor(255, 102, 179), 0, QtCore.Qt.SolidLine)
+        self.viewmode = QtGui.QPen(QtGui.QColor(0, 153, 51), 0, QtCore.Qt.SolidLine)
 
     def draw(self):
         qp = QtGui.QPainter()
@@ -1210,6 +1212,14 @@ class PEBottomBanner(Banners.BottomBanner):
         sb = 'BYTE: {0}'.format(byte)
 
         cemu.writeAt(1,  0, pos)
+        if self.viewMode.isInEditMode():
+            qp.setPen(self.editmode)
+            cemu.writeAt(1, 1, '[edit mode]')
+        else:
+            qp.setPen(self.viewmode)
+            cemu.writeAt(1,  1, '[view mode]')
+
+        qp.setPen(self.yellow)
         cemu.writeAt(17, 0, sd)
         cemu.writeAt(35, 0, sq)
         cemu.writeAt(62, 0, sb)
