@@ -10,8 +10,9 @@ class rc4(UnpackPlugin.DecryptPlugin):
 
     def init(self, dataModel, viewMode):
         super(rc4, self).init(dataModel, viewMode)
-
-        self.ui = PyQt4.uic.loadUi(os.path.join('.', 'plugins', 'unpack', 'rc4.ui'))
+		#root = os.path.dirname(sys.argv[0])
+        root = os.path.dirname(sys.argv[0])
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'rc4.ui'))
 
         self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
         return True

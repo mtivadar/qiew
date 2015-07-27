@@ -13,7 +13,8 @@ class basic(UnpackPlugin.DecryptPlugin):
     def init(self, dataModel, viewMode):
         super(basic, self).init(dataModel, viewMode)
 
-        self.ui = PyQt4.uic.loadUi(os.path.join('.', 'plugins', 'unpack', 'basic.ui'))
+        root = os.path.dirname(sys.argv[0])
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'basic.ui'))
 
         self.ui.key.textChanged.connect(self._keychanged)
         self.ui.key.setValidator(UnpackPlugin.MyValidator(self.ui.key))

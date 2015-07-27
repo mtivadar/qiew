@@ -13,7 +13,8 @@ class aes(UnpackPlugin.DecryptPlugin):
     def init(self, dataModel, viewMode):
         super(aes, self).init(dataModel, viewMode)
 
-        self.ui = PyQt4.uic.loadUi(os.path.join('.', 'plugins', 'unpack', 'aes.ui'))
+        root = os.path.dirname(sys.argv[0])
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'aes.ui'))
 
         self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
         self.ui.op_iv.activated[QtCore.QString].connect(self._itemchanged_iv)
