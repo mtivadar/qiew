@@ -16,7 +16,7 @@ exe = Executable(
 
 setup(
     name = "Qiew",
-    version = "0.1",
+    version = "1.1",
     description = "Binary/Hex format viewer",
     # , 'packages':["distorm3"]
     options = {"build_exe": {'copy_dependent_files':True, 'create_shared_zip':False, 'bin_includes':binincludes, 'bin_path_includes':binpaths, 'include_files':includefiles}},
