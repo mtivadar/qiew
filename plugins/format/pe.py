@@ -1269,8 +1269,8 @@ class PEBottomBanner(Banners.BottomBanner):
             if sel:
                 off = 73 + 3 + len(sel)
 
-            cemu.writeAt(off, 0, 'overlay: {0:,} bytes'.format(start))
-            cemu.writeAt(off, 1, '         {0}%'.format(start*100/self.dataModel.size()))
+            cemu.writeAt(off, 0, 'overlay: {0:,} bytes'.format(self.dataModel.size() - start))
+            cemu.writeAt(off, 1, '         {0}%'.format((self.dataModel.size() - start)*100/self.dataModel.size()))
         
         qp.end()
 
