@@ -805,6 +805,11 @@ class Qiew(QtGui.QWidget):
         self.showMaximized()
         self.wid.activateWindow()
 
+        self.raise_()
+        self.installEventFilter(self)
+
+    def eventFilter(self, watched, event):
+        return self.wid.eventFilter(watched, event)
 
 def main():
     app = QtGui.QApplication(sys.argv)
