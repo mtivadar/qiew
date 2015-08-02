@@ -244,7 +244,7 @@ class binWidget(QtGui.QWidget, Observable):
         self.activateWindow()
         self.setFocus()
 
-        self.installEventFilter(self)
+        #self.installEventFilter(self)
 
     """        
             # build thumbnail
@@ -328,6 +328,7 @@ class binWidget(QtGui.QWidget, Observable):
         qp.end()
 
 
+    """
     def keyPressEvent(self, event):
         if event.modifiers() & QtCore.Qt.ShiftModifier:
             if self.viewMode.handleKeyPressEvent(QtCore.Qt.ShiftModifier, event.key()):
@@ -337,9 +338,16 @@ class binWidget(QtGui.QWidget, Observable):
         if event.key() == QtCore.Qt.Key_Shift:
             if self.viewMode.handleKeyReleaseEvent(QtCore.Qt.ShiftModifier, event.key()):
                 self.update()
-
+    """
     def eventFilter(self, watched, event):
         
+        if event.type() == QtCore.QEvent.KeyRelease:
+            key = event.key()
+            modifiers = event.modifiers()
+            if self.viewMode.handleKeyEvent(modifiers, key, event=event):
+                self.update()
+
+
         if event.type() == QtCore.QEvent.KeyPress: 
             #TODO: should we accept only certain keys ?
             key = event.key()

@@ -981,105 +981,101 @@ class DisasmViewMode(ViewMode):
             self.goTo(offset)
 
     def handleKeyEvent(self, modifiers, key, event=None):
-        if modifiers == QtCore.Qt.ShiftModifier:
-            keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up, QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
-            if key in keys:
-                self.startSelection()
+        if event.type() == QtCore.QEvent.KeyRelease:
+            if key == QtCore.Qt.Key_Shift:
+                self.stopSelection()
+                return True
 
-        if modifiers == QtCore.Qt.ControlModifier:
-            if key == QtCore.Qt.Key_Right:
-                self.dataModel.slide(1)
-                self.addop((self.scroll, -1, 0))
+        if event.type() == QtCore.QEvent.KeyPress:
 
-            if key == QtCore.Qt.Key_Left:
-                self.dataModel.slide(-1)
-                self.addop((self.scroll, 1, 0))
+            if modifiers == QtCore.Qt.ShiftModifier:
+                keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up, QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
+                if key in keys:
+                    self.startSelection()
 
-            if key == QtCore.Qt.Key_Down:
-                self.addop((self.scroll, 0, -1))
-                self.addop((self.draw,))
+            if modifiers == QtCore.Qt.ControlModifier:
+                if key == QtCore.Qt.Key_Right:
+                    self.dataModel.slide(1)
+                    self.addop((self.scroll, -1, 0))
 
-            if key == QtCore.Qt.Key_Up:
-                self.addop((self.scroll, 0, 1))
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Left:
+                    self.dataModel.slide(-1)
+                    self.addop((self.scroll, 1, 0))
 
-            if key == QtCore.Qt.Key_End:
-                # not supported
-                pass
+                if key == QtCore.Qt.Key_Down:
+                    self.addop((self.scroll, 0, -1))
+                    self.addop((self.draw,))
 
-            if key == QtCore.Qt.Key_Home:
-                self.moveCursor(Directions.CtrlHome)
-                self.addop((self.draw,))
-                #self.draw()
+                if key == QtCore.Qt.Key_Up:
+                    self.addop((self.scroll, 0, 1))
+                    self.addop((self.draw,))
 
-            return True
+                if key == QtCore.Qt.Key_End:
+                    # not supported
+                    pass
 
-        else:#elif modifiers == QtCore.Qt.NoModifier:
+                if key == QtCore.Qt.Key_Home:
+                    self.moveCursor(Directions.CtrlHome)
+                    self.addop((self.draw,))
+                    #self.draw()
 
-            if key == QtCore.Qt.Key_Escape:
-                self.selector.resetSelections()
-                self.addop((self.draw,))
+                return True
 
-            if key == QtCore.Qt.Key_Left:
-                self.moveCursor(Directions.Left)
-                self.addop((self.draw,))
-                #self.draw()
+            else:#elif modifiers == QtCore.Qt.NoModifier:
 
-            if key == QtCore.Qt.Key_Right:
-                self.moveCursor(Directions.Right)
-                self.addop((self.draw,))
-                #self.draw()
-                
-            if key == QtCore.Qt.Key_Down:
-                self.moveCursor(Directions.Down)
-                self.addop((self.draw,))
-                #self.draw()
-                
-            if key == QtCore.Qt.Key_End:
-                self.moveCursor(Directions.End)
-                self.addop((self.draw,))
-                #self.draw()
-                
-            if key == QtCore.Qt.Key_Home:
-                self.moveCursor(Directions.Home)
-                self.addop((self.draw,))
-                #self.draw()
+                if key == QtCore.Qt.Key_Escape:
+                    self.selector.resetSelections()
+                    self.addop((self.draw,))
 
-            if key == QtCore.Qt.Key_Up:
-                self.moveCursor(Directions.Up)
-                self.addop((self.draw,))
-                #self.draw()
-                
-            if key == QtCore.Qt.Key_PageDown:
-                self.addop((self.scrollPages, 1))
-                self.addop((self.draw,))
-    
-            if key == QtCore.Qt.Key_PageUp:
-                self.addop((self.scrollPages, -1))
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Left:
+                    self.moveCursor(Directions.Left)
+                    self.addop((self.draw,))
+                    #self.draw()
 
-            if key == QtCore.Qt.Key_Return:
-                self.addop((self._followBranch,))
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Right:
+                    self.moveCursor(Directions.Right)
+                    self.addop((self.draw,))
+                    #self.draw()
+                    
+                if key == QtCore.Qt.Key_Down:
+                    self.moveCursor(Directions.Down)
+                    self.addop((self.draw,))
+                    #self.draw()
+                    
+                if key == QtCore.Qt.Key_End:
+                    self.moveCursor(Directions.End)
+                    self.addop((self.draw,))
+                    #self.draw()
+                    
+                if key == QtCore.Qt.Key_Home:
+                    self.moveCursor(Directions.Home)
+                    self.addop((self.draw,))
+                    #self.draw()
 
-            if key == QtCore.Qt.Key_Escape:
-                self.addop((self._followBranchHistory,))
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Up:
+                    self.moveCursor(Directions.Up)
+                    self.addop((self.draw,))
+                    #self.draw()
+                    
+                if key == QtCore.Qt.Key_PageDown:
+                    self.addop((self.scrollPages, 1))
+                    self.addop((self.draw,))
+        
+                if key == QtCore.Qt.Key_PageUp:
+                    self.addop((self.scrollPages, -1))
+                    self.addop((self.draw,))
 
-            return True
+                if key == QtCore.Qt.Key_Return:
+                    self.addop((self._followBranch,))
+                    self.addop((self.draw,))
+
+                if key == QtCore.Qt.Key_Escape:
+                    self.addop((self._followBranchHistory,))
+                    self.addop((self.draw,))
+
+                return True
 
         return False
-
-    def handleKeyPressEvent(self, modifier, key):
-        if modifier == QtCore.Qt.ShiftModifier:
-#            self.startSelection()
-            return True
-
-    def handleKeyReleaseEvent(self, modifier, key):
-        if modifier == QtCore.Qt.ShiftModifier:
-            self.stopSelection()
-            return True
-
 
     def addop(self, t):
         self.Ops.append(t)

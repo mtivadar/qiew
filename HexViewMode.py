@@ -591,86 +591,92 @@ class HexViewMode(ViewMode):
 
 
     def handleKeyEvent(self, modifiers, key, event=None):
+        if event.type() == QtCore.QEvent.KeyRelease:
+            if key == QtCore.Qt.Key_Shift:
+                self.stopSelection()
+                return True
 
-        if modifiers == QtCore.Qt.ShiftModifier:
-            keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up, QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
-            if key in keys:
-                self.startSelection()
+        if event.type() == QtCore.QEvent.KeyPress:
 
-        if modifiers == QtCore.Qt.ControlModifier:
+            if modifiers == QtCore.Qt.ShiftModifier:
+                keys = [QtCore.Qt.Key_Right, QtCore.Qt.Key_Left, QtCore.Qt.Key_Down, QtCore.Qt.Key_Up, QtCore.Qt.Key_End, QtCore.Qt.Key_Home]
+                if key in keys:
+                    self.startSelection()
 
-            if key == QtCore.Qt.Key_Right:
-                self.addop((self.anon, -1, 0))
+            if modifiers == QtCore.Qt.ControlModifier:
 
-            if key == QtCore.Qt.Key_Left:
-                self.addop((self.scroll, 1, 0))
+                if key == QtCore.Qt.Key_Right:
+                    self.addop((self.anon, -1, 0))
+
+                if key == QtCore.Qt.Key_Left:
+                    self.addop((self.scroll, 1, 0))
 
 
-            if key == QtCore.Qt.Key_Down:
-                self.addop((self.anon, 0, -1))
+                if key == QtCore.Qt.Key_Down:
+                    self.addop((self.anon, 0, -1))
 
-            if key == QtCore.Qt.Key_Up:
-                self.addop((self.scroll, 0, 1))
+                if key == QtCore.Qt.Key_Up:
+                    self.addop((self.scroll, 0, 1))
 
-            if key == QtCore.Qt.Key_End:
-                self.moveCursor(Directions.CtrlEnd)
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_End:
+                    self.moveCursor(Directions.CtrlEnd)
+                    self.addop((self.draw,))
 
-            if key == QtCore.Qt.Key_Home:
-                self.moveCursor(Directions.CtrlHome)
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Home:
+                    self.moveCursor(Directions.CtrlHome)
+                    self.addop((self.draw,))
 
-            return True
+                return True
 
-        else:#selif modifiers == QtCore.Qt.NoModifier:
+            else:#selif modifiers == QtCore.Qt.NoModifier:
 
-            if key == QtCore.Qt.Key_Escape:
-                self.selector.resetSelections()
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Escape:
+                    self.selector.resetSelections()
+                    self.addop((self.draw,))
 
-            if key == QtCore.Qt.Key_Left:
-                self.moveCursor(Directions.Left)
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Left:
+                    self.moveCursor(Directions.Left)
+                    self.addop((self.draw,))
 
-            if key == QtCore.Qt.Key_Right:
-                self.moveCursor(Directions.Right)
-                self.addop((self.draw,))
-                
-            if key == QtCore.Qt.Key_Down:
-                self.moveCursor(Directions.Down)
-                self.addop((self.draw,))
-                
-            if key == QtCore.Qt.Key_End:
-                self.moveCursor(Directions.End)
-                self.addop((self.draw,))
-                
-            if key == QtCore.Qt.Key_Home:
-                self.moveCursor(Directions.Home)
-                self.addop((self.draw,))
+                if key == QtCore.Qt.Key_Right:
+                    self.moveCursor(Directions.Right)
+                    self.addop((self.draw,))
+                    
+                if key == QtCore.Qt.Key_Down:
+                    self.moveCursor(Directions.Down)
+                    self.addop((self.draw,))
+                    
+                if key == QtCore.Qt.Key_End:
+                    self.moveCursor(Directions.End)
+                    self.addop((self.draw,))
+                    
+                if key == QtCore.Qt.Key_Home:
+                    self.moveCursor(Directions.Home)
+                    self.addop((self.draw,))
 
-            if key == QtCore.Qt.Key_Up:
-                self.moveCursor(Directions.Up)
-                self.addop((self.draw,))
-                
-            if key == QtCore.Qt.Key_PageDown:
-                self.addop((self.scrollPages, 1))
-    
-            if key == QtCore.Qt.Key_PageUp:
-                self.addop((self.scrollPages, -1))
+                if key == QtCore.Qt.Key_Up:
+                    self.moveCursor(Directions.Up)
+                    self.addop((self.draw,))
+                    
+                if key == QtCore.Qt.Key_PageDown:
+                    self.addop((self.scrollPages, 1))
+        
+                if key == QtCore.Qt.Key_PageUp:
+                    self.addop((self.scrollPages, -1))
 
-            if key == QtCore.Qt.Key_F6:
-                self.changeHexColumns()
-                x, y = self.cursor.getPosition()
+                if key == QtCore.Qt.Key_F6:
+                    self.changeHexColumns()
+                    x, y = self.cursor.getPosition()
 
-                columns = self.HexColumns[self.idxHexColumns]
-                if x > columns:
-                    self.cursor.moveAbsolute(columns-1, y)
-                self.addop((self.draw,))
+                    columns = self.HexColumns[self.idxHexColumns]
+                    if x > columns:
+                        self.cursor.moveAbsolute(columns-1, y)
+                    self.addop((self.draw,))
 
-            if self.isInEditMode():
-                self.handleEditMode(modifiers, key, event)
+                if self.isInEditMode():
+                    self.handleEditMode(modifiers, key, event)
 
-            return True
+                return True
 
         return False
 
@@ -694,16 +700,6 @@ class HexViewMode(ViewMode):
             for shortcut in self.plugin.getShortcuts():
                 if shortcut.key().toString() in list('0123456789abcdefABCDEF') + ['Alt+A', 'Alt+B', 'Alt+C', 'Alt+D', 'Alt+E', 'Alt+F']:
                     shortcut.setEnabled(False)
-
-    def handleKeyPressEvent(self, modifier, key):
-        if modifier == QtCore.Qt.ShiftModifier:
-#            self.startSelection()
-            return True
-
-    def handleKeyReleaseEvent(self, modifier, key):
-        if modifier == QtCore.Qt.ShiftModifier:
-            self.stopSelection()
-            return True
 
     def addop(self, t):
         self.Ops.append(t)
