@@ -1,4 +1,4 @@
-distorm3*
+distorm3
 pefile
 pyperclip
 pyaes
