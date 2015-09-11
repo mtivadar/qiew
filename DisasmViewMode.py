@@ -11,19 +11,56 @@ import binascii
 
 import distorm3
 
+import capstone
+import capstone.x86
 
+import ply.lex as lex
+
+
+MNEMONIC_COLUMN = 30
+MNEMONIC_WIDTH = 15
 
 class ASMLine:
     def __init__(self, d, plugin):
-        self._hexstr = self.hexlify(d.instructionBytes)
-        self._instruction = str(d)
+        self._hexstr = self.hexlify(d.bytes)
+        self._instruction = d.op_str
+        self._operands = d.op_str
         self._size = d.size
         self._addr = d.address
         self._mnemonic = d.mnemonic
         self._d = d
         self.refString = ''
-        self._str = ' '.join(self.instruction.split(' ')[1:])
+        #self._str = ' '.join(self.instruction.split(' ')[1:])
+        self._str = 'a'
 
+        self.symbol = None
+
+        tokens = ('REGISTER', 'NUMBER', 'ID', 'WHITE', 'PTR')
+        t_REGISTER = r'e?r?[abcde]x|ebp|esp|rip|rbp|rsp|r[1-9][1-9]*d?b?|rsi|rdi|edi|esi|gs|fs|xmm[0-9]|[abcd][lh]'
+        t_NUMBER = r'0x[0-9a-f]+|[0-9]+'
+        t_PTR = r'qword|dword|word|byte|ptr|xmmword'
+        t_ignore = r' []-,+:'
+
+        def t_error(t):
+            t.type = t.value[0]
+            t.value = t.value[0]
+            t.lexer.skip(1)
+            print 'LEXER ERROR'
+            return t
+
+        self.lexer = lex.lex()
+        #print d.op_str
+        try:
+            self.lexer.input(d.op_str)
+
+        except Exception, e:
+            print e
+            sys.exit()
+
+        self.lexer = list(self.lexer)
+
+
+        """
         # gets ref string (only for PUSH and RIP addressing)
         if 'FLAG_RIP_RELATIVE' in d.flags:
             if len(d.operands) > 1:
@@ -62,7 +99,121 @@ class ASMLine:
 
                 if sym:
                     self.symbol = sym
+        """
+        # gets ref string (only for PUSH and RIP addressing)
+        asm = d
 
+        if len(asm.operands) > 1:
+            o = asm.operands[1]
+
+            if o.type == capstone.x86.X86_OP_MEM:
+                if o.mem.base == capstone.x86.X86_REG_RIP:
+                    x =  asm.address + asm.size + o.mem.disp
+                    self.refString = plugin.stringFromVA(x)
+
+        
+        # get symbol
+        if self.ingroup([capstone.x86.X86_GRP_CALL]):
+            value = None
+            asm = d
+
+            for o in self._d.operands:
+                if o.type == capstone.x86.X86_OP_IMM:
+                    value = o.imm
+
+                if o.type == capstone.x86.X86_OP_MEM:
+                    value = o.mem.disp + asm.size + asm.address
+
+#                print o, o.type
+
+            if value:
+                sym = plugin.disasmSymbol(value)
+
+                if sym:
+                    self.symbol = sym
+
+
+
+        self.indexTable = []
+        H = self.hex.split(' ')
+        for i, h in enumerate(H):
+            self.indexTable += [(i*3, len(h), h)]
+
+        self.indexTable += [(MNEMONIC_COLUMN, len(self.mnemonic), self.mnemonic)]
+
+        if self.symbol:
+            t = (MNEMONIC_COLUMN + MNEMONIC_WIDTH + 1, len(self.symbol), self.symbol)
+            self.indexTable += [t]
+        else:
+            for tok in self.lexer:
+                t = (tok.lexpos + MNEMONIC_COLUMN + MNEMONIC_WIDTH, len(tok.value), tok.value)
+                self.indexTable += [t]
+
+
+        #print self.indexTable
+
+    def getSelectedToken(self, cx):
+        for i, t in enumerate(self.indexTable):
+            idx, length, value = t
+            if cx == idx:
+                return t
+
+        return None
+
+    def getSelectionWidth(self, cx):
+        for i, t in enumerate(self.indexTable):
+            idx, length, value = t
+            if cx == idx:
+                return length
+
+        return None
+
+    def getEndCursor(self):
+        idx, length, value = self.indexTable[-1]
+        return idx
+
+    def getNearestCursor(self, cx):
+        if cx > self.getEndCursor():
+            return self.getEndCursor()
+
+        i = len(self.indexTable) - 1
+        while i > 0:
+            idx, length, value = self.indexTable[i]
+            if cx >= idx:
+                return idx
+            i -= 1
+
+        return 0
+
+    def getNextCursor(self, cx, direction=''):
+        for i, t in enumerate(self.indexTable):
+            idx, length, value = t
+            if cx == idx:
+                break
+
+        if direction == Directions.Right:
+            if i < len(self.indexTable) - 1:
+                idx, length, value = self.indexTable[i + 1]
+            else:
+                return 0, 1
+
+        if direction == Directions.Left:
+            if i > 0:
+                idx, length, value = self.indexTable[i - 1]
+            else:
+                return 0, -1
+
+        return idx, 0
+
+
+    def ingroup(self, group):
+        if len(self._d.groups) > 0:
+            for g in self._d.groups:
+                for x in group:
+                    if x == g:
+                        return True
+
+        return False
 
 
     def hexlify(self, sb):
@@ -86,12 +237,20 @@ class ASMLine:
     def mnemonic(self):
         return self._mnemonic
 
+    """
     @property
     def instruction(self):
         return self._instruction
+    """
 
     @property
+    def operands(self):
+        return self._operands
+    
+    @property
     def restOfInstr(self):
+        return 'x'
+        """
         asm = self._d
 
         if 'FLAG_NOT_DECODABLE' in asm.flags:
@@ -99,6 +258,7 @@ class ASMLine:
         else:
             #return ', '.join([str(o) for o in asm.operands])
             return self._str
+        """
 
     @restOfInstr.setter
     def restOFInstr(self, value):
@@ -234,90 +394,40 @@ class DisasmViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
 
         asm = self.OPCODES[cursorY]
-        line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
 
-        x = cursorX
-        xstart = x
-
-        x = cursorX
-        while x < len(line):
-            if x < len(line):
-                if line[x] not in self.ASMSeparators:
-                    x += 1
-                else:
-                    break
-
-        xend = x
-        
+        xstart = cursorX
+        width = asm.getSelectionWidth(xstart)
 
         qp.setBrush(QtGui.QColor(255, 255, 0))
 
         qp.setOpacity(0.5)
-        qp.drawRect(xstart*self.fontWidth, cursorY*self.fontHeight, (xend - xstart)*self.fontWidth, self.fontHeight + 2)
+        qp.drawRect(xstart*self.fontWidth, cursorY*self.fontHeight, width*self.fontWidth, self.fontHeight + 2)
         qp.setOpacity(1)
 
 
 
     def drawSelected(self, qp):
         qp.setFont(self.font)
+
         cursorX, cursorY = self.cursor.getPosition()
 
-        qasm = self.OPCODES[cursorY]
-        line = qasm.hex + (30 - len(qasm.hex))*' ' + qasm.mnemonic + (10 - len(qasm.mnemonic))*' ' + qasm.restOfInstr
-
-        xstart = cursorX
-
-        x = cursorX
-        while x < len(line):
-            if x < len(line):
-                if line[x] not in self.ASMSeparators:
-                    x += 1
-                else:
-                    break
-
-        xend = x
-
-        text = line[xstart:xend]
+        asm = self.OPCODES[cursorY]
+        cx, width, text = asm.getSelectedToken(cursorX)
 
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         for i, asm in enumerate(self.OPCODES):
-            line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
+            for idx, length, value in asm.indexTable:
+                # skip current cursor position
+                if cursorY == i and cursorX == idx:
+                    continue
 
-            for g in [line]:
-                if text in g:
-
-                    for xstart in [m.start() for m in re.finditer(text, g)]:
-                        qp.setBrush(QtGui.QColor(255, 255, 0))
-                        qp.setPen(QtGui.QColor(255, 255, 0))
-                        xend = len(text)
-
-                        #print text
-
-                        if i == cursorY and xstart == cursorX:
-                            continue
-
-                        
-                        if xstart + xend + 1 < len(line):
-                            if line[xstart + xend] not in self.ASMSeparators:
-                                continue
-
-                        if xstart - 1 > 0:
-                            if line[xstart - 1] not in self.ASMSeparators:
-                                continue
-
-                        qp.setOpacity(0.4)
-                        #qp.drawRect(xstart*self.fontWidth, i*self.fontHeight, (xend - xstart)*self.fontWidth, self.fontHeight + 2)
-                        brush=QtGui.QBrush(QtGui.QColor(0, 255, 0))
-                        qp.fillRect(xstart*self.fontWidth, i*self.fontHeight + 2 , (len(text))*self.fontWidth, self.fontHeight, brush)
-                        qp.setOpacity(1)
-
-                        #print asm.hex
-                        #qp.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0)))
-                        #cemu.writeAt(g.index(text), i, text)
-
-
-#        qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
+                # check every line, if match, select it
+                if value == text:
+                    qp.setOpacity(0.4)
+                    brush=QtGui.QBrush(QtGui.QColor(0, 255, 0))
+                    qp.fillRect(idx*self.fontWidth, i*self.fontHeight + 2 , width*self.fontWidth, self.fontHeight, brush)
+                    qp.setOpacity(1)
 
 
     def drawBranch(self, qp):
@@ -481,20 +591,6 @@ class DisasmViewMode(ViewMode):
         else:
             return 0
         
-
-    def _buildOpstr(self, hexdump, instruction):
-        s = ''
-        for i in range(10):
-            if len(hexdump) > i*2 + 2 - 1:
-                s += hexdump[i*2:i*2 + 2] + ' '
-
-
-        s += ' '*(30 - len(s))
-
-        s += instruction
-
-        return s
-
     def _getVA(self, offset):
         if self.plugin:
             return self.plugin.hintDisasmVA(offset)
@@ -502,109 +598,13 @@ class DisasmViewMode(ViewMode):
         return 0
 
     def _getOpcodes(self, ofs, code, dt):
-        
-        self.OPCODES = []        
-        DEC = distorm3.DecomposeGenerator(self._getVA(ofs), code, dt)
-        g = 0
-        for d in DEC:
-            newline = ASMLine(d, self.plugin)
-            self.OPCODES.append(newline)
-            g += 1
-            if g == self.ROWS:
-                break
 
+        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+        md.detail = True
+        Disasm = md.disasm(code, self._getVA(ofs), count=self.ROWS)
+        for d in Disasm:
+            self.OPCODES.append(ASMLine(d, self.plugin))
 
-    def _opdelegate(self, s, type, qp, cemu):
-        qp.save()
-        if type == 'VALUE':
-            qp.setPen(QtGui.QPen(QtGui.QColor('green')))
-        elif type == 'REGISTER':
-            qp.setPen(QtGui.QPen(QtGui.QColor('white')))
-        elif type == 'SYM':
-            qp.setPen(QtGui.QPen(QtGui.QColor('yellow'), 1, QtCore.Qt.SolidLine))
-        else:
-            qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
-
-
-        for c in s:
-            cemu.write_c(c)
-
-        qp.restore()
-        return s
-
-
-    def _expandOp(self, asm, callback, args):
-
-        SIZE = {}
-        SIZE[0] = ''
-        SIZE[8]  = 'BYTE'
-        SIZE[16] = 'WORD'
-        SIZE[32] = 'DWORD'
-        SIZE[64] = 'QWORD'
-
-        r = ''
-        for i, o in enumerate(asm.operands):
-            #print o.size
-            # put memory size modifier
-            # todo: i don't like this, but i'm not sure how to do it other way
-            if len(asm.operands) == 2:
-
-                if i == 0 and o.type == distorm3.OPERAND_MEMORY:
-                    g = asm.operands[1]
-                    if g.type == distorm3.OPERAND_IMMEDIATE:
-                        if len(set([p.size for p in asm.operands])) > 1:
-                            r += callback(SIZE[o.size], 'OP', *args)    
-                            r += callback(' ', 'OP', *args)
-
-                if i == 1 and o.type == distorm3.OPERAND_MEMORY:
-                    g = asm.operands[0]
-                    if g.size != o.size and o.size != 0:
-                        r += callback(SIZE[o.size], 'OP', *args)
-                        r += callback(' ', 'OP', *args)
-
-            if o.type == distorm3.OPERAND_IMMEDIATE:
-                if o.value >= 0:
-                    r += callback("0x%x" % o.value, 'VALUE', *args)
-
-                else:
-                    r += callback("-0x%x" % abs(o.value), 'VALUE', *args)
-
-            elif o.type == distorm3.OPERAND_REGISTER:
-                r += callback(o.name, 'REGISTER', *args)
-
-            elif o.type == distorm3.OPERAND_ABSOLUTE_ADDRESS:
-                r += callback('[', 'OP', *args)
-                r += callback('0x%x'%o.disp, 'VALUE', *args)
-                r += callback(']', 'OP', *args)
-
-            elif o.type == distorm3.OPERAND_FAR_MEMORY:
-                r += callback('%s' % hex(o.seg), 'REGISTER', *args)
-                r += callback(':', 'OP', *args)
-                r += callback('%s' % hex(o.off), 'REGISTER', *args)
-
-            elif (o.type == distorm3.OPERAND_MEMORY):
-                r += callback('[', 'OP', *args)
-
-                if o.base != None:
-                    r += callback(distorm3.Registers[o.base], 'REGISTER', *args)
-                    r += callback('+', 'OP', *args)
-
-                if o.index != None:
-                    r += callback(distorm3.Registers[o.index], 'REGISTER', *args)
-                    if o.scale > 1:
-                        r += callback('*%d'%o.scale, 'VALUE', *args)
-
-                if o.disp >= 0:
-                    r += callback('+0x%x'%o.disp, 'VALUE', *args)
-                else:
-                    r += callback('-0x%x'%abs(o.disp), 'VALUE', *args)
-
-                r += callback(']', 'OP', *args)
-
-            if i != len(asm.operands) - 1:
-                r += callback(', ', 'OP', *args)
-
-        return r
 
 
     def _drawRow(self, qp, cemu, row, asm):
@@ -614,18 +614,19 @@ class DisasmViewMode(ViewMode):
         cemu.writeAt(0, row, asm.hex)
 
         # fill with spaces
-        cemu.write((30 - len(asm.hex))*' ')
+        cemu.write((MNEMONIC_COLUMN - len(asm.hex))*' ')
 
         # let's color some branch instr
-        if asm.obj.flowControl != 'FC_NONE':
-            qp.setPen(QtGui.QPen(QtGui.QColor(255, 0, 0)))
+        if asm.ingroup([capstone.x86.X86_GRP_JUMP, capstone.x86.X86_GRP_CALL]):
+            qp.setPen(QtGui.QPen(QtGui.QColor(255, 80, 0)))
+            asm.mnemonic = asm.mnemonic.upper()
         else:
             qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
-        
+
         cemu.write(asm.mnemonic)
 
         # leave some spaces
-        cemu.write((10-len(asm.mnemonic))*' ')
+        cemu.write((MNEMONIC_WIDTH-len(asm.mnemonic))*' ')
 
         if asm.symbol:
             qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
@@ -639,12 +640,10 @@ class DisasmViewMode(ViewMode):
 
             result = '[' + asm.symbol + ']'
         else:
-            result = self._expandOp(asm.obj, self._opdelegate, (qp, cemu))
+            self._write_instruction(asm, qp, cemu)
+            #result = asm.operands
 
         #print result
-        # ugly, but necessary for the cursor move to function well
-        # we save the instruction as a string here
-        asm.restOfInstr = result        
 
         if len(asm.refString) > 4:
             cemu.write((30-len(asm.restOfInstr))*' ')
@@ -652,6 +651,31 @@ class DisasmViewMode(ViewMode):
             qp.setPen(QtGui.QPen(QtGui.QColor(82, 192, 192), 1, QtCore.Qt.SolidLine))
             cemu.write('; "{0}"'.format(asm.refString))
 
+
+    def _write_instruction(self, asm, qp, cemu):
+        s = asm.operands
+        idx = 0
+        qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
+
+        for tok in asm.lexer:
+            if tok.lexpos > idx:
+                cemu.write(s[idx:tok.lexpos])
+                idx = tok.lexpos
+
+            qp.save()
+            if tok.type == 'REGISTER':
+                qp.setPen(QtGui.QPen(QtGui.QColor('white')))
+            
+            if tok.type == 'NUMBER':
+                qp.setPen(QtGui.QPen(QtGui.QColor('green')))
+
+            cemu.write(tok.value)
+
+            qp.restore()
+            idx = tok.lexpos + len(tok.value)
+
+        if idx < len(s):
+            cemu.write(s[idx:])
 
     def drawTextMode(self, qp):
         # draw background
@@ -725,6 +749,14 @@ class DisasmViewMode(ViewMode):
     def scrollPages(self, number, cachePix=None, pageOffset=None):
         self.scroll(0, -number*self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
 
+    def _disassamble_one(self, start, end, count=0):
+        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+        md.detail = True
+        code = str(self.dataModel.getStream(start, end))
+        Disasm = list(md.disasm(code, self._getVA(start), count=count))
+
+        return Disasm
+
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
         #start = time()        
 
@@ -738,6 +770,7 @@ class DisasmViewMode(ViewMode):
         
         for row in range(factor):
 
+            d = None
             if dy < 0:
                 tsize = sum([asm.size for asm in self.OPCODES])
 
@@ -757,9 +790,26 @@ class DisasmViewMode(ViewMode):
                 if start == end:
                     return
 
-                iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
+                iterable = self._disassamble_one(start, end, count=1)
+                if len(iterable) > 0:
+                    d = iterable[0]
+                else:
+                    #todo: what should we handle here
+                    break
+                """
+                md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+                md.detail = True
+                code = str(self.dataModel.getStream(start, end))
+                Disasm = md.disasm(code, self._getVA(start), count=1)
+
+                for d in Disasm:
+                    d = d
+                    #self.OPCODES.append(ASMLine(d, self.plugin))
+                """
+
+                #iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
                 # eat first instruction from the page
-                d = iterable[0]
+                #d = iterable[0]
 
             if dy >= 0:
                 # we try to decode from current offset - 50, in this case even if decoding is incorrect (will overlap),
@@ -773,13 +823,41 @@ class DisasmViewMode(ViewMode):
 
                 end = self.dataModel.getOffset()
                 #print 'end ' + str(hex(end))
-                iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
+
+                """
+                md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+                md.detail = True
+
+                code = str(self.dataModel.getStream(start, end))
+                """
+                #iterable = list(md.disasm(code, self._getVA(start)))
+                iterable = self._disassamble_one(start, end)
+
+                cnt = 0
+                while len(iterable) == 0 or cnt < 50:
+                    start = start + cnt
+                    #code = str(self.dataModel.getStream(start, end))
+                    #iterable = list(md.disasm(code, self._getVA(start)))
+                    iterable = self._disassamble_one(start, end)
+
+                    if len(iterable) != 0:
+                        break
+
+                    cnt += 1
 
                 if len(iterable) == 0:
+                    print 'NAM CE FACEs ' + str(cnt)
                     # maybe we are at beginning cannot scroll more
                     break
 
                 d = iterable[-1]
+                if d.address + d.size != self._getVA(end):
+                    print hex(start)
+
+                    print d.size
+                    print hex(end)
+                    print hex(d.address)
+                    print 'ALEEEEEEEEEEEEEEEEEEERTTTTTTTTTTTT'
 
             #hexstr = self.hexlify(self.dataModel.getStream(start + d.address, start + d.address + d.size))
             newasm = ASMLine(d, self.plugin)
@@ -872,76 +950,61 @@ class DisasmViewMode(ViewMode):
 
         if direction == Directions.Left:
             asm = self.OPCODES[cursorY]
-            line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
 
             if cursorX == 0:
                 if cursorY == 0:
+                    # if first line, scroll
                     self.scroll(0, 1)
                     self.cursor.moveAbsolute(0, 0)
                 else:
-                    self.cursor.moveAbsolute(0, cursorY - 1)
+                    # move to last token from previous line
+                    asm_prev = self.OPCODES[cursorY - 1]
+                    idx = asm_prev.getEndCursor()
+                    self.cursor.moveAbsolute(idx, cursorY - 1)
             else:
-                x = cursorX - 1
-
-                while x >= 0 and line[x] in self.ASMSeparators:
-                    x -= 1
-
-                while x >= 0 and line[x] not in self.ASMSeparators:
-                    x -= 1
-
-                #print line[cursorX:]
-                #print line[x:]
-
-
-                self.cursor.move(-(cursorX-x) + 1, 0)
+                x, dy = asm.getNextCursor(cursorX, direction=Directions.Left)
+                self.cursor.move(-(cursorX-x), dy)
 
 
         if direction == Directions.Right:
             asm = self.OPCODES[cursorY]
-            line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
+            x, dy = asm.getNextCursor(cursorX, direction=Directions.Right)
 
-            if cursorX == len(line) - 1:
-#            if cursorX == self.COLUMNS-1:
-                if cursorY == self.ROWS-1:
-                    #self.dataModel.slide(1)
-                    self.scroll(0, -1)
-                    self.cursor.moveAbsolute(0, cursorY)
-                else:
-                    self.cursor.moveAbsolute(0, cursorY + 1)
+            if cursorY == self.ROWS-1 and dy > 0:
+                self.scroll(0, -1)
+                self.cursor.moveAbsolute(0, cursorY)
+
             else:
-                x = cursorX
-                while x < len(line) - 1 and line[x] not in self.ASMSeparators:
-                    x += 1
-
-                while x < len(line) - 1 and line[x] in self.ASMSeparators:
-                    x += 1
-
-                self.cursor.move(x-cursorX, 0)
-                #self.cursorX += 1
+                self.cursor.move(x-cursorX, dy)
 
         if direction == Directions.Down:
             if cursorY == self.ROWS-1:
+                # move cursor to first token
                 self.scroll(0, -1)
+                self.cursor.moveAbsolute(0, cursorY)
             else:
-                if cursorY < len(self.OPCODES)-1:
-                    self.cursor.move(0, 1)
+                # move next line, to nearest token on columns
+                asm = self.OPCODES[cursorY + 1]
+                x = asm.getNearestCursor(cursorX)
+                self.cursor.moveAbsolute(x, cursorY + 1)
 
         if direction == Directions.Up:
             if cursorY == 0:
+                # move cursor to first token
                 self.scroll(0, 1)
+                self.cursor.moveAbsolute(0, cursorY)
             else:
-                self.cursor.move(0, -1)
+                # move next line, to nearest token on columns
+                asm = self.OPCODES[cursorY - 1]
+                x = asm.getNearestCursor(cursorX)
+                self.cursor.moveAbsolute(x, cursorY - 1)
 
         if direction == Directions.End:
             pass
-            #self.cursor.moveAbsolute(self.COLUMNS-1, self.ROWS-1)
-            #self.cursorX = self.COLUMNS-1
-            #self.cursorY = self.ROWS-1
 
         if direction == Directions.Home:
             self.cursor.moveAbsolute(0, 0)
-            #self.cursorX = 0
-            #self.cursorY = 0
+
 
         if direction == Directions.CtrlHome:
             self.goTo(0)
