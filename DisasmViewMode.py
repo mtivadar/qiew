@@ -28,6 +28,7 @@ class ASMLine:
         self._size = d.size
         self._addr = d.address
         self._mnemonic = d.mnemonic
+
         self._d = d
         self.refString = ''
         #self._str = ' '.join(self.instruction.split(' ')[1:])
@@ -36,15 +37,16 @@ class ASMLine:
         self.symbol = None
 
         tokens = ('REGISTER', 'NUMBER', 'ID', 'WHITE', 'PTR')
-        t_REGISTER = r'e?r?[abcde]x|ebp|esp|rip|rbp|rsp|r[1-9][1-9]*d?b?|rsi|rdi|edi|esi|gs|fs|xmm[0-9]|[abcd][lh]'
+        t_REGISTER = r'e?r?[abcde]x|ebp|esp|rip|rbp|rsp|r[1-9][1-9]*d?b?|si|di|rsi|rdi|edi|esi|gs|fs|xmm[0-9]|[abcd][lh]|cr[0-9]|ymm[0-9]|dr[0-7]|fp[0-7]|mm[0-7]|dil'
         t_NUMBER = r'0x[0-9a-f]+|[0-9]+'
         t_PTR = r'qword|dword|word|byte|ptr|xmmword'
-        t_ignore = r' []-,+:'
+        t_ignore = r' []-,+:*'
 
         def t_error(t):
             t.type = t.value[0]
             t.value = t.value[0]
             t.lexer.skip(1)
+            print t.value
             print 'LEXER ERROR'
             return t
 
@@ -248,30 +250,36 @@ class ASMLine:
         return self._operands
     
     @property
-    def restOfInstr(self):
-        return 'x'
-        """
-        asm = self._d
-
-        if 'FLAG_NOT_DECODABLE' in asm.flags:
-            return ''
-        else:
-            #return ', '.join([str(o) for o in asm.operands])
-            return self._str
-        """
-
-    @restOfInstr.setter
-    def restOFInstr(self, value):
-        self._str = value
-
-    @property
     def refString(self):
         return self.refString
 
     @property
     def obj(self):
         return self._d
-    
+
+    def isBranch(self):
+        return self.ingroup([capstone.x86.X86_GRP_JUMP, capstone.x86.X86_GRP_CALL])
+
+    def branchAddress(self):
+        if not self.isBranch():
+            return None
+
+        asm = self.obj
+        if len(asm.operands) == 1:
+            o = asm.operands[0]
+
+            if o.type == capstone.x86.X86_OP_MEM:
+                #if o.mem.base == capstone.x86.X86_REG_RIP:
+                x = asm.address + asm.size + o.mem.disp
+                return x
+
+            if o.type == capstone.x86.X86_OP_IMM:
+                x = o.imm
+                return x
+
+
+
+
 class DisasmViewMode(ViewMode):
     def __init__(self, width, height, data, cursor, widget=None, plugin=None):
         super(DisasmViewMode, self).__init__()
@@ -437,92 +445,83 @@ class DisasmViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
 
         asm = self.OPCODES[cursorY]
-        line = asm.hex + (30 - len(asm.hex))*' ' + asm.mnemonic + (10 - len(asm.mnemonic))*' ' + asm.restOfInstr
 
-        if asm.obj.flowControl != 'FC_NONE':
-            #print dir(asm.obj)
-            #print asm.obj.flowControl
-            #print asm.obj.dt
+        if asm.isBranch():
 
             tsize = sum([o.size for o in self.OPCODES])
             msize = sum([o.size for o in self.OPCODES[:cursorY]])
 
             half = self.fontHeight/2
-            for o in asm.obj.operands:
 
-                #print 'operand ' + str(o)
-                #print 'msize ' +  str(msize)
+            # branch address
+            target = asm.branchAddress()
+            if target == None:
+                return
 
-                target = o.value
-                #print 'target ' + str(hex(target))
+            screenVA = self._getVA(self.dataModel.getOffset())
+            if target >  screenVA and target < self._getVA(self.dataModel.getOffset()) + tsize - self.OPCODES[-1].size:
+                # branch target is in screen
 
-                screenVA = self._getVA(self.dataModel.getOffset())
-                if target >  screenVA and target < self._getVA(self.dataModel.getOffset()) + tsize - self.OPCODES[-1].size:
-                    # branch target is in screen
+                sz = 0
+                for i, t in enumerate(self.OPCODES):
+                    sz += t.size
+                    if sz+self._getVA(self.dataModel.getOffset()) >= target:
+                        break
 
-                    sz = 0
-                    for i, t in enumerate(self.OPCODES):
-                        sz += t.size
-                        if sz+self._getVA(self.dataModel.getOffset()) >= target:
-                            break
+                qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
 
-                    #print self.OPCODES[i+1].instruction
-                    qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
+                # draw the three lines
 
-                    
-                    #qp.drawLine((len(line) + 1)*self.fontWidth, cursorY*self.fontHeight + self.fontHeight/2, len(line)*self.fontWidth + 200, cursorY*self.fontHeight + half)
-                    qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
 
-                    tasm = self.OPCODES[i+1]
-                    tline = tasm.hex + (30 - len(tasm.hex))*' ' + tasm.mnemonic + (10 - len(tasm.mnemonic))*' ' + tasm.restOfInstr
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (i + 1)*self.fontHeight + half)
 
-                    qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (i + 1)*self.fontHeight + half)
-                    #print tline
-                    qp.drawLine(-30, (i + 1)*self.fontHeight + half, -15, (i + 1)*self.fontHeight + half)
+                qp.drawLine(-30, (i + 1)*self.fontHeight + half, -15, (i + 1)*self.fontHeight + half)
 
-                    points = [QtCore.QPoint(-15, (i + 1)*self.fontHeight + half - 5), 
-                              QtCore.QPoint(-15, (i + 1)*self.fontHeight + half + 5), 
-                              QtCore.QPoint(-5, (i + 1)*self.fontHeight + half), ]
-                    needle = QtGui.QPolygon(points)
-                    qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
-                    qp.drawPolygon(needle)
+                # draw arrow
+                points = [QtCore.QPoint(-15, (i + 1)*self.fontHeight + half - 5), 
+                          QtCore.QPoint(-15, (i + 1)*self.fontHeight + half + 5), 
+                          QtCore.QPoint(-5, (i + 1)*self.fontHeight + half), ]
+                needle = QtGui.QPolygon(points)
+                qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
+                qp.drawPolygon(needle)
 
 
 
-                elif target > screenVA:
-                    # branch is at greater address, out of screen
-                    qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
+            elif target > screenVA:
+                # branch is at greater address, out of screen
 
-                    qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
+                qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
 
-                    qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
-                    qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (self.ROWS - 2)*self.fontHeight + half)
+                # draw the two lines
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (self.ROWS - 2)*self.fontHeight + half)
 
-                    points = [QtCore.QPoint(-25, (self.ROWS - 2)*self.fontHeight + half), 
-                              QtCore.QPoint(-35, (self.ROWS - 2)*self.fontHeight + half), 
-                              QtCore.QPoint(-30, (self.ROWS - 2)*self.fontHeight + 2*half), ]
-                    needle = QtGui.QPolygon(points)
-                    qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
-                    qp.drawPolygon(needle)
+                # draw arrow
+                points = [QtCore.QPoint(-25, (self.ROWS - 2)*self.fontHeight + half), 
+                          QtCore.QPoint(-35, (self.ROWS - 2)*self.fontHeight + half), 
+                          QtCore.QPoint(-30, (self.ROWS - 2)*self.fontHeight + 2*half), ]
+                needle = QtGui.QPolygon(points)
+                qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
+                qp.drawPolygon(needle)
 
-                else:
-                    # upper arrow
-                    # branch is at lower address, out of screen
+            else:
+                # upper arrow
+                # branch is at lower address, out of screen
 
-                    qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.SolidLine))
+                qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
 
-                    qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
+                # draw the two lines
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (1)*self.fontHeight + half)
 
-                    qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
-                    qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (1)*self.fontHeight + half)
-
-                    points = [QtCore.QPoint(-25, (1)*self.fontHeight + half), 
-                              QtCore.QPoint(-35, (1)*self.fontHeight + half), 
-                              QtCore.QPoint(-30, (1)*self.fontHeight), ]
-                    needle = QtGui.QPolygon(points)
-                    qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
-                    qp.drawPolygon(needle)
-                    #qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.DashedLine))
+                # draw arrow
+                points = [QtCore.QPoint(-25, (1)*self.fontHeight + half), 
+                          QtCore.QPoint(-35, (1)*self.fontHeight + half), 
+                          QtCore.QPoint(-30, (1)*self.fontHeight), ]
+                needle = QtGui.QPolygon(points)
+                qp.setBrush(QtGui.QBrush(QtGui.QColor(0, 128, 0)))
+                qp.drawPolygon(needle)
 
 
 
@@ -597,14 +596,48 @@ class DisasmViewMode(ViewMode):
 
         return 0
 
-    def _getOpcodes(self, ofs, code, dt):
-
+    def _getOpcodes(self, ofs, code, dt, count):
         md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
         md.detail = True
-        Disasm = md.disasm(code, self._getVA(ofs), count=self.ROWS)
-        for d in Disasm:
-            self.OPCODES.append(ASMLine(d, self.plugin))
+        
+        cnt = 0
+        offset = 0
+        #self.OPCODES = []
+        OPCODES = []
 
+        # how ugly ... don't like capstone on this one..
+        while cnt < count and offset < len(code):
+            Disasm = md.disasm(code[offset:], self._getVA(ofs) + offset, count=count)
+
+            # disasamble as much as we can
+            for d in Disasm:
+                cnt += 1
+                offset += d.size
+                OPCODES.append(ASMLine(d, self.plugin))
+
+            # when we are stopped with errors, inject fake isntructions
+            if cnt < self.ROWS and offset < len(code):
+                class D:
+                    mnemonic = 'db'
+                    bytes = ''
+                    op_str = ''
+                    size = 1
+                    address = 0
+                    operands = []
+                    groups = []
+
+                d = D()
+                d.mnemonic = 'db ' + '0x{:02x}'.format(bytearray(code[offset])[0])
+                d.bytes = code[offset]
+
+                d.address = self._getVA(ofs) + offset
+
+                OPCODES.append(ASMLine(d, self.plugin))
+                cnt += 1
+                offset += 1
+
+
+        return OPCODES
 
 
     def _drawRow(self, qp, cemu, row, asm):
@@ -617,7 +650,7 @@ class DisasmViewMode(ViewMode):
         cemu.write((MNEMONIC_COLUMN - len(asm.hex))*' ')
 
         # let's color some branch instr
-        if asm.ingroup([capstone.x86.X86_GRP_JUMP, capstone.x86.X86_GRP_CALL]):
+        if asm.isBranch():
             qp.setPen(QtGui.QPen(QtGui.QColor(255, 80, 0)))
             asm.mnemonic = asm.mnemonic.upper()
         else:
@@ -646,7 +679,7 @@ class DisasmViewMode(ViewMode):
         #print result
 
         if len(asm.refString) > 4:
-            cemu.write((30-len(asm.restOfInstr))*' ')
+            cemu.write(30*' ')
 
             qp.setPen(QtGui.QPen(QtGui.QColor(82, 192, 192), 1, QtCore.Qt.SolidLine))
             cemu.write('; "{0}"'.format(asm.refString))
@@ -688,7 +721,7 @@ class DisasmViewMode(ViewMode):
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         if len(self.OPCODES) == 0:
-            self._getOpcodes(self.dataModel.getOffset(), str(self.getDisplayablePage()), self.plugin.hintDisasm())
+            self.OPCODES = self._getOpcodes(self.dataModel.getOffset(), str(self.getDisplayablePage()), self.plugin.hintDisasm(), count=self.ROWS)
 
 
         for i in range(self.ROWS):
@@ -735,7 +768,7 @@ class DisasmViewMode(ViewMode):
         else:
             # else, move page
             self.dataModel.goTo(offset)
-            self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm())            
+            self.OPCODES = self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm(), count=self.ROWS)
             self.cursor.moveAbsolute(0, 0)
             self.draw(refresh=True)
 
@@ -749,12 +782,15 @@ class DisasmViewMode(ViewMode):
     def scrollPages(self, number, cachePix=None, pageOffset=None):
         self.scroll(0, -number*self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
 
-    def _disassamble_one(self, start, end, count=0):
+    def _disassamble_one(self, start, end, count=1):
+        code = str(self.dataModel.getStream(start, end))
+        Disasm = self._getOpcodes(start, code, 0, count)
+        """
         md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
         md.detail = True
         code = str(self.dataModel.getStream(start, end))
         Disasm = list(md.disasm(code, self._getVA(start), count=count))
-
+        """
         return Disasm
 
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
@@ -791,6 +827,7 @@ class DisasmViewMode(ViewMode):
                     return
 
                 iterable = self._disassamble_one(start, end, count=1)
+                #print iterable
                 if len(iterable) > 0:
                     d = iterable[0]
                 else:
@@ -831,36 +868,17 @@ class DisasmViewMode(ViewMode):
                 code = str(self.dataModel.getStream(start, end))
                 """
                 #iterable = list(md.disasm(code, self._getVA(start)))
-                iterable = self._disassamble_one(start, end)
-
-                cnt = 0
-                while len(iterable) == 0 or cnt < 50:
-                    start = start + cnt
-                    #code = str(self.dataModel.getStream(start, end))
-                    #iterable = list(md.disasm(code, self._getVA(start)))
-                    iterable = self._disassamble_one(start, end)
-
-                    if len(iterable) != 0:
-                        break
-
-                    cnt += 1
-
-                if len(iterable) == 0:
-                    print 'NAM CE FACEs ' + str(cnt)
-                    # maybe we are at beginning cannot scroll more
+                iterable = self._disassamble_one(start, end, count=25)
+                #print iterable
+                if len(iterable) > 0:
+                    d = iterable[-1]
+                else:
+                    # TODO: 
+                    print 'bbbbbbbbbbbbbbb'
                     break
-
-                d = iterable[-1]
-                if d.address + d.size != self._getVA(end):
-                    print hex(start)
-
-                    print d.size
-                    print hex(end)
-                    print hex(d.address)
-                    print 'ALEEEEEEEEEEEEEEEEEEERTTTTTTTTTTTT'
-
             #hexstr = self.hexlify(self.dataModel.getStream(start + d.address, start + d.address + d.size))
-            newasm = ASMLine(d, self.plugin)
+            #newasm = ASMLine(d, self.plugin)
+            newasm = d
 
             if dy < 0:
                 self.dataModel.slide(self.OPCODES[0].size)
@@ -1018,18 +1036,9 @@ class DisasmViewMode(ViewMode):
         cursorX, cursorY = self.cursor.getPosition()
         asm = self.OPCODES[cursorY]
 
-        asm = asm.obj
-        if asm.flowControl != 'FC_NONE':
-            for o in asm.operands:
-                if o.dispSize != 0:
-                    if 'FLAG_RIP_RELATIVE' in asm.flags:
-                        value =  asm.address + asm.size + o.disp
-                    else:
-                        value = o.disp
-                else:
-                    value = o.value
-
-
+        if asm.isBranch():
+            value = asm.branchAddress()
+            if value:
                 fofs = self.plugin.disasmVAtoFA(value)
                 if fofs != None:
                     rowOfs = self._getOffsetOfRow(cursorY)
