@@ -53,8 +53,8 @@ class ASMLine:
         self.lexer = lex.lex()
         #print d.op_str
         try:
-            #self.lexer.input(d.op_str)
-            pass
+            self.lexer.input(d.op_str)
+
         except Exception, e:
             print e
             sys.exit()
@@ -104,7 +104,7 @@ class ASMLine:
         """
         # gets ref string (only for PUSH and RIP addressing)
         asm = d
-
+        
         if len(asm.operands) > 1:
             o = asm.operands[1]
 
