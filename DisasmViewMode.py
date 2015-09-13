@@ -104,7 +104,7 @@ class ASMLine:
         """
         # gets ref string (only for PUSH and RIP addressing)
         asm = d
-
+        """
         if len(asm.operands) > 1:
             o = asm.operands[1]
 
@@ -133,7 +133,7 @@ class ASMLine:
 
                 if sym:
                     self.symbol = sym
-
+        """
 
 
         self.indexTable = []
