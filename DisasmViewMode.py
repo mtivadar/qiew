@@ -20,22 +20,16 @@ import ply.lex as lex
 MNEMONIC_COLUMN = 30
 MNEMONIC_WIDTH = 15
 
-class ASMLine:
-    def __init__(self, d, plugin):
-        self._hexstr = self.hexlify(d.bytes)
-        self._instruction = d.op_str
-        self._operands = d.op_str
-        self._size = d.size
-        self._addr = d.address
-        self._mnemonic = d.mnemonic
+class ASMLexer(object):
+    pass
 
-        self._d = d
-        self.refString = ''
-        #self._str = ' '.join(self.instruction.split(' ')[1:])
-        self._str = 'a'
+class ARM_Lexer(ASMLexer):
+    pass
 
-        self.symbol = None
+class X86_Lexer(ASMLexer):
+    def __init__(self):
 
+        self._loaded = True
         tokens = ('REGISTER', 'NUMBER', 'ID', 'WHITE', 'PTR')
         t_REGISTER = r'e?r?[abcde]x|ebp|esp|rip|rbp|rsp|r[1-9][1-9]*d?b?|si|di|rsi|rdi|edi|esi|gs|fs|xmm[0-9]|[abcd][lh]|cr[0-9]|ymm[0-9]|dr[0-7]|fp[0-7]|mm[0-7]|dil'
         t_NUMBER = r'0x[0-9a-f]+|[0-9]+'
@@ -50,17 +44,35 @@ class ASMLine:
             print 'LEXER ERROR'
             return t
 
-        self.lexer = lex.lex()
-        #print d.op_str
-        try:
-            self.lexer.input(d.op_str)
+        self._lexer = lex.lex()
 
-        except Exception, e:
-            print e
-            sys.exit()
+    def lexer(self):
+        return self._lexer
 
-        self.lexer = list(self.lexer)
 
+class ASMLine:
+    def __init__(self, d, plugin):
+        self._hexstr = self.hexlify(d.bytes)
+        self._instruction = d.op_str
+        self._operands = d.op_str
+        self._size = d.size
+        self._addr = d.address
+        self._mnemonic = d.mnemonic
+        self._computed = False
+
+        self._d = d
+        self._asm = d
+        #self._str = ' '.join(self.instruction.split(' ')[1:])
+        self._str = 'a'
+
+        self._symbol = None
+        self._refString = None
+        self._indexTable = []
+        self._loaded = False
+
+        self._plugin = plugin
+
+        
 
         """
         # gets ref string (only for PUSH and RIP addressing)
@@ -103,8 +115,9 @@ class ASMLine:
                     self.symbol = sym
         """
         # gets ref string (only for PUSH and RIP addressing)
+        """
         asm = d
-        
+
         if len(asm.operands) > 1:
             o = asm.operands[1]
 
@@ -151,8 +164,97 @@ class ASMLine:
                 t = (tok.lexpos + MNEMONIC_COLUMN + MNEMONIC_WIDTH, len(tok.value), tok.value)
                 self.indexTable += [t]
 
-
+        """
         #print self.indexTable
+
+
+    def iterTokens(self):
+        self.full_load()
+        return self.lexer
+
+    def full_load(self):
+        if self._loaded:
+            return
+
+        self._lexer = X86_Lexer().lexer()
+        self._lexer.input(self._asm.op_str)
+        self.lexer = []
+
+        self.lexer = list(self._lexer)
+
+
+        # compute index table
+
+        # add hex bytes as tokens
+        H = self.hex.split(' ')
+        for i, h in enumerate(H):
+            self._indexTable += [(i*3, len(h), h)]
+
+        # add mnemonic as token
+        self._indexTable += [(MNEMONIC_COLUMN, len(self.mnemonic), self.mnemonic)]
+
+        # add symbol as token
+        if self.symbol:
+            t = (MNEMONIC_COLUMN + MNEMONIC_WIDTH + 1, len(self.symbol), self.symbol)
+            self._indexTable += [t]
+        else:
+            for tok in self.lexer:
+                t = (tok.lexpos + MNEMONIC_COLUMN + MNEMONIC_WIDTH, len(tok.value), tok.value)
+                self._indexTable += [t]
+
+
+    @property
+    def referencedString(self):
+
+        if self._refString != None:
+            return self._refString
+
+        asm = self._asm
+
+        self._refString = ''
+
+        if len(asm.operands) > 1:
+            o = asm.operands[1]
+
+            if o.type == capstone.x86.X86_OP_MEM:
+                if o.mem.base == capstone.x86.X86_REG_RIP:
+                    x =  asm.address + asm.size + o.mem.disp
+                    self._refString = self._plugin.stringFromVA(x)
+
+        return self._refString
+
+    @property
+    def symbol(self):
+            
+        if self._symbol != None:
+            return self._symbol
+
+        # get symbol
+        if self.ingroup([capstone.x86.X86_GRP_CALL]):
+            value = None
+            asm = self._asm
+
+            for o in asm.operands:
+                if o.type == capstone.x86.X86_OP_IMM:
+                    value = o.imm
+
+                if o.type == capstone.x86.X86_OP_MEM:
+                    value = o.mem.disp + asm.size + asm.address
+
+            if value:
+                sym = self._plugin.disasmSymbol(value)
+
+                if sym:
+                    self._symbol = sym
+
+        return self._symbol
+    
+    @property
+    def indexTable(self):
+        return self._indexTable
+    
+    def tokens(self):
+        return self._indexTable
 
     def getSelectedToken(self, cx):
         for i, t in enumerate(self.indexTable):
@@ -163,6 +265,7 @@ class ASMLine:
         return None
 
     def getSelectionWidth(self, cx):
+        self.full_load()
         for i, t in enumerate(self.indexTable):
             idx, length, value = t
             if cx == idx:
@@ -239,20 +342,10 @@ class ASMLine:
     def mnemonic(self):
         return self._mnemonic
 
-    """
-    @property
-    def instruction(self):
-        return self._instruction
-    """
-
     @property
     def operands(self):
         return self._operands
     
-    @property
-    def refString(self):
-        return self.refString
-
     @property
     def obj(self):
         return self._d
@@ -425,7 +518,7 @@ class DisasmViewMode(ViewMode):
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         for i, asm in enumerate(self.OPCODES):
-            for idx, length, value in asm.indexTable:
+            for idx, length, value in asm.tokens():
                 # skip current cursor position
                 if cursorY == i and cursorX == idx:
                     continue
@@ -678,14 +771,16 @@ class DisasmViewMode(ViewMode):
 
         #print result
 
-        if len(asm.refString) > 4:
+        if len(asm.referencedString) > 4:
             cemu.write(30*' ')
 
             qp.setPen(QtGui.QPen(QtGui.QColor(82, 192, 192), 1, QtCore.Qt.SolidLine))
-            cemu.write('; "{0}"'.format(asm.refString))
+            cemu.write('; "{0}"'.format(asm.referencedString))
 
 
     def _write_instruction(self, asm, qp, cemu):
+        asm.full_load()
+
         s = asm.operands
         idx = 0
         qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
