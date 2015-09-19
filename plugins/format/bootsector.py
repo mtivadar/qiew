@@ -9,7 +9,7 @@ import PyQt4
 
 from cemu import *
 
-import distorm3
+import DisasmViewMode
 
 class Bootsector(FileFormat):
     name = 'bootsector'
@@ -30,7 +30,7 @@ class Bootsector(FileFormat):
 
         return False
 
-    def init(self, viewMode):
+    def init(self, viewMode, parent):
         self.viewMode = viewMode
 
         self.MZbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
@@ -50,7 +50,7 @@ class Bootsector(FileFormat):
         return True
 
     def hintDisasm(self):
-        return distorm3.Decode16Bits
+        return DisasmViewMode.Disasm_x86_16bit
 
     def hintDisasmVA(self, offset):
         return 0x7c00 + offset

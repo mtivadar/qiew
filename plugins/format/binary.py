@@ -7,6 +7,7 @@ import PyQt4
 from cemu import *
 
 import sys, os
+import DisasmViewMode
 
 class Binary(FileFormat):
     name = 'binary'
@@ -16,7 +17,7 @@ class Binary(FileFormat):
         self.dataModel = dataModel
         return True
 
-    def init(self, viewMode):
+    def init(self, viewMode, parent):
         self._viewMode = viewMode
 
         self.MZbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
@@ -36,7 +37,7 @@ class Binary(FileFormat):
         return True
 
     def hintDisasm(self):
-        return distorm3.Decode16Bits
+        return DisasmViewMode.Disasm_x86_16bit
 
     def hintDisasmVA(self, offset):
         return offset

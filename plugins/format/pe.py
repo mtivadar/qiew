@@ -10,7 +10,7 @@ from PyQt4 import QtGui, QtCore
 from cemu import *
 import time
 
-import distorm3
+import DisasmViewMode
 
 class PE(FileFormat):
     name = 'pe'
@@ -38,7 +38,7 @@ class PE(FileFormat):
     def getAddressMode(self):
         return self.DisplayTypes[0]
 
-    def init(self, viewMode):
+    def init(self, viewMode, parent):
         self._viewMode = viewMode
         self.viewMode = viewMode        
 
@@ -76,12 +76,12 @@ class PE(FileFormat):
     def hintDisasm(self):
 
         if self.PE.FILE_HEADER.Machine & pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_AMD64'] == pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_AMD64']:
-            return distorm3.Decode64Bits
+            return DisasmViewMode.Disasm_x86_64bit
 
         if self.PE.FILE_HEADER.Machine & pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_I386'] == pefile.MACHINE_TYPE['IMAGE_FILE_MACHINE_I386']:
-            return distorm3.Decode32Bits
+            return DisasmViewMode.Disasm_x86_32bit
 
-        return distorm3.Decode32Bits
+        return DisasmViewMode.Disasm_x86_32bit
 
     def hintDisasmVA(self, offset):
         return self.getVA(offset)
