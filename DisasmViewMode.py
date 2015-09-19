@@ -9,8 +9,6 @@ import threading
 import re
 import binascii
 
-import distorm3
-
 import capstone
 import capstone.x86
 
@@ -20,38 +18,115 @@ import ply.lex as lex
 MNEMONIC_COLUMN = 30
 MNEMONIC_WIDTH = 15
 
+
+Disasm_x86_16bit = (capstone.CS_ARCH_X86, capstone.CS_MODE_16)
+Disasm_x86_32bit = (capstone.CS_ARCH_X86, capstone.CS_MODE_32)
+Disasm_x86_64bit = (capstone.CS_ARCH_X86, capstone.CS_MODE_64)
+
+Disasm_ARM = (capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+Disasm_ARM_Thumb = (capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
+Disasm_ARM64 = (capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
+
 class ASMLexer(object):
-    pass
-
-class ARM_Lexer(ASMLexer):
-    pass
-
-class X86_Lexer(ASMLexer):
     def __init__(self):
+        pass
 
-        self._loaded = True
-        tokens = ('REGISTER', 'NUMBER', 'ID', 'WHITE', 'PTR')
-        t_REGISTER = r'e?r?[abcde]x|ebp|esp|rip|rbp|rsp|r[1-9][1-9]*d?b?|si|di|rsi|rdi|edi|esi|gs|fs|xmm[0-9]|[abcd][lh]|cr[0-9]|ymm[0-9]|dr[0-7]|fp[0-7]|mm[0-7]|dil'
-        t_NUMBER = r'0x[0-9a-f]+|[0-9]+'
-        t_PTR = r'qword|dword|word|byte|ptr|xmmword'
-        t_ignore = r' []-,+:*'
+    def set(self, name, value):
+        setattr(self, name, value)
 
-        def t_error(t):
-            t.type = t.value[0]
-            t.value = t.value[0]
-            t.lexer.skip(1)
-            print t.value
-            print 'LEXER ERROR'
-            return t
-
-        self._lexer = lex.lex()
+    # Build the lexer
+    def build(self,**kwargs):
+        self._lexer = lex.lex(module=self, **kwargs)
 
     def lexer(self):
         return self._lexer
 
 
-class ASMLine:
-    def __init__(self, d, plugin):
+class ARM_Lexer(ASMLexer):
+    def __init__(self):
+
+        self._loaded = True
+
+        my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr'
+        my_t_NUMBER = r'\#-?0x[0-9a-f]+|[0-9]+'
+        my_t_PTR = r'qword|dword|word|byte|ptr|xmmword'
+        my_t_ignore = r' [],+:*{}^'
+
+        self.set('t_REGISTER', my_t_REGISTER)
+        self.set('t_NUMBER', my_t_NUMBER)
+        self.set('t_PTR', my_t_PTR)
+        self.set('t_ignore', my_t_ignore)
+        self.set('t_error', self.my_t_error)
+
+    tokens = ('REGISTER', 'NUMBER', 'PTR')
+
+    def my_t_error(self, t):
+        t.type = t.value[0]
+        t.value = t.value[0]
+        t.lexer.skip(1)
+        print t.value
+        print 'LEXER ERROR'
+        return t
+
+
+class ARM64_Lexer(ASMLexer):
+    def __init__(self):
+
+        self._loaded = True
+
+        my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr'
+        my_t_NUMBER = r'\#-?0x[0-9a-f]+|[0-9]+'
+        my_t_PTR = r'qword|dword|word|byte|ptr|xmmword'
+        my_t_ignore = r' [],+:*{}^'
+
+        self.set('t_REGISTER', my_t_REGISTER)
+        self.set('t_NUMBER', my_t_NUMBER)
+        self.set('t_PTR', my_t_PTR)
+        self.set('t_ignore', my_t_ignore)
+        self.set('t_error', self.my_t_error)
+
+    tokens = ('REGISTER', 'NUMBER', 'PTR')
+
+    def my_t_error(self, t):
+        t.type = t.value[0]
+        t.value = t.value[0]
+        t.lexer.skip(1)
+        print t.value
+        print 'LEXER ERROR'
+        return t
+
+
+class X86_Lexer(ASMLexer):
+    def __init__(self):
+
+        self._loaded = True
+        my_t_REGISTER = r'e?r?[abcde]x|ebp|bp|esp|rip|rbp|rsp|r[1-9][0-9]*d?b?w?|si|di|rsi|rdi|edi|esi?|gs|fs|ss|cs|ds|xmm[0-9]|[abcd][lh]|cr[0-9]|ymm[0-9]|dr[0-7]|fp[0-7]|mm[0-7]|dil|st'
+        my_t_NUMBER = r'0x[0-9a-f]+|[0-9]+'
+        my_t_PTR = r'qword|dword|word|byte|ptr|xmmword'
+        my_t_ignore = r' []-,+:*()'
+
+        self.set('t_REGISTER', my_t_REGISTER)
+        self.set('t_NUMBER', my_t_NUMBER)
+        self.set('t_PTR', my_t_PTR)
+        self.set('t_ignore', my_t_ignore)
+        self.set('t_error', self.my_t_error)
+
+        
+    tokens = ('REGISTER', 'NUMBER', 'PTR')
+    
+
+    def my_t_error(self, t):
+        t.type = t.value[0]
+        print t.value
+        t.value = t.value[0]
+        t.lexer.skip(1)
+        print t.value
+        print 'LEXER ERROR'
+        return t
+
+
+class ASMLine(object):
+    def __init__(self, d, plugin, lexer):
         self._hexstr = self.hexlify(d.bytes)
         self._instruction = d.op_str
         self._operands = d.op_str
@@ -59,11 +134,10 @@ class ASMLine:
         self._addr = d.address
         self._mnemonic = d.mnemonic
         self._computed = False
+        self.Lexer = lexer
 
         self._d = d
         self._asm = d
-        #self._str = ' '.join(self.instruction.split(' ')[1:])
-        self._str = 'a'
 
         self._symbol = None
         self._refString = None
@@ -71,101 +145,6 @@ class ASMLine:
         self._loaded = False
 
         self._plugin = plugin
-
-        
-
-        """
-        # gets ref string (only for PUSH and RIP addressing)
-        if 'FLAG_RIP_RELATIVE' in d.flags:
-            if len(d.operands) > 1:
-                o = d.operands[1]
-
-                if o.dispSize != 0:
-                    x =  d.address + d.size + o.disp
-                    self.refString = plugin.stringFromVA(x)
-
-        elif d.mnemonic == 'PUSH':
-
-            o = d.operands[0]
-            if o.type == 'Immediate':
-                self.refString = plugin.stringFromVA(o.value)
-
-        else:
-            pass
-
-
-        # get symbol
-        self.symbol = None
-        asm = d
-        value = None
-        if asm.flowControl != 'FC_NONE':
-            for o in asm.operands:
-                if o.dispSize != 0:
-                    if 'FLAG_RIP_RELATIVE' in asm.flags:
-                        value =  asm.address + asm.size + o.disp
-                    else:
-                        value = o.disp
-                else:
-                    value = o.value
-
-            if value:
-                sym = plugin.disasmSymbol(value)
-
-                if sym:
-                    self.symbol = sym
-        """
-        # gets ref string (only for PUSH and RIP addressing)
-        """
-        asm = d
-
-        if len(asm.operands) > 1:
-            o = asm.operands[1]
-
-            if o.type == capstone.x86.X86_OP_MEM:
-                if o.mem.base == capstone.x86.X86_REG_RIP:
-                    x =  asm.address + asm.size + o.mem.disp
-                    self.refString = plugin.stringFromVA(x)
-
-        
-        # get symbol
-        if self.ingroup([capstone.x86.X86_GRP_CALL]):
-            value = None
-            asm = d
-
-            for o in self._d.operands:
-                if o.type == capstone.x86.X86_OP_IMM:
-                    value = o.imm
-
-                if o.type == capstone.x86.X86_OP_MEM:
-                    value = o.mem.disp + asm.size + asm.address
-
-#                print o, o.type
-
-            if value:
-                sym = plugin.disasmSymbol(value)
-
-                if sym:
-                    self.symbol = sym
-
-
-
-        self.indexTable = []
-        H = self.hex.split(' ')
-        for i, h in enumerate(H):
-            self.indexTable += [(i*3, len(h), h)]
-
-        self.indexTable += [(MNEMONIC_COLUMN, len(self.mnemonic), self.mnemonic)]
-
-        if self.symbol:
-            t = (MNEMONIC_COLUMN + MNEMONIC_WIDTH + 1, len(self.symbol), self.symbol)
-            self.indexTable += [t]
-        else:
-            for tok in self.lexer:
-                t = (tok.lexpos + MNEMONIC_COLUMN + MNEMONIC_WIDTH, len(tok.value), tok.value)
-                self.indexTable += [t]
-
-        """
-        #print self.indexTable
 
 
     def iterTokens(self):
@@ -176,9 +155,10 @@ class ASMLine:
         if self._loaded:
             return
 
-        self._lexer = X86_Lexer().lexer()
+        #self._lexer = X86_Lexer().lexer()
+        self._lexer = self.Lexer
         self._lexer.input(self._asm.op_str)
-        self.lexer = []
+        #self.lexer = []
 
         self.lexer = list(self._lexer)
 
@@ -202,52 +182,15 @@ class ASMLine:
                 t = (tok.lexpos + MNEMONIC_COLUMN + MNEMONIC_WIDTH, len(tok.value), tok.value)
                 self._indexTable += [t]
 
+        self._loaded = True
 
     @property
     def referencedString(self):
-
-        if self._refString != None:
-            return self._refString
-
-        asm = self._asm
-
-        self._refString = ''
-
-        if len(asm.operands) > 1:
-            o = asm.operands[1]
-
-            if o.type == capstone.x86.X86_OP_MEM:
-                if o.mem.base == capstone.x86.X86_REG_RIP:
-                    x =  asm.address + asm.size + o.mem.disp
-                    self._refString = self._plugin.stringFromVA(x)
-
-        return self._refString
+        raise "not implemented"
 
     @property
     def symbol(self):
-            
-        if self._symbol != None:
-            return self._symbol
-
-        # get symbol
-        if self.ingroup([capstone.x86.X86_GRP_CALL]):
-            value = None
-            asm = self._asm
-
-            for o in asm.operands:
-                if o.type == capstone.x86.X86_OP_IMM:
-                    value = o.imm
-
-                if o.type == capstone.x86.X86_OP_MEM:
-                    value = o.mem.disp + asm.size + asm.address
-
-            if value:
-                sym = self._plugin.disasmSymbol(value)
-
-                if sym:
-                    self._symbol = sym
-
-        return self._symbol
+        raise "not implemented"
     
     @property
     def indexTable(self):
@@ -262,7 +205,7 @@ class ASMLine:
             if cx == idx:
                 return t
 
-        return None
+        return self.indexTable[0]
 
     def getSelectionWidth(self, cx):
         self.full_load()
@@ -271,9 +214,10 @@ class ASMLine:
             if cx == idx:
                 return length
 
-        return None
+        return 0
 
     def getEndCursor(self):
+        self.full_load()
         idx, length, value = self.indexTable[-1]
         return idx
 
@@ -340,7 +284,7 @@ class ASMLine:
 
     @property
     def mnemonic(self):
-        return self._mnemonic
+        return self._mnemonic#.upper()
 
     @property
     def operands(self):
@@ -349,6 +293,81 @@ class ASMLine:
     @property
     def obj(self):
         return self._d
+
+    def isBranch(self):
+        raise "not implemented"
+
+    def branchAddress(self):
+        raise "not implemented"
+
+# represents x86 asm line
+class ASMx86Line(ASMLine):
+    def __init__(self, d, plugin, lexer):
+        super(ASMx86Line, self).__init__(d, plugin, lexer)
+
+    @property
+    def referencedString(self):
+
+        # get referenced string
+        if self._refString != None:
+            return self._refString
+
+        asm = self._asm
+
+        self._refString = ''
+
+        # PUSH <imm>
+        if asm.id == capstone.x86.X86_INS_PUSH:
+            if len(asm.operands) == 1:
+                o = asm.operands[0]
+
+                if o.type == capstone.x86.X86_OP_IMM:
+                    value = o.imm
+                    self._refString = self._plugin.stringFromVA(value)
+
+        # [RIP + <imm>]
+        if len(asm.operands) > 1:
+            o = asm.operands[1]
+
+            if o.type == capstone.x86.X86_OP_MEM:
+                if o.mem.base == capstone.x86.X86_REG_RIP:
+                    x =  asm.address + asm.size + o.mem.disp
+                    self._refString = self._plugin.stringFromVA(x)
+
+        return self._refString
+
+    @property
+    def symbol(self):
+            
+        # get symbol from plugin (for API calls for eg.)
+        if self._symbol != None:
+            return self._symbol
+
+        # get symbol
+        if self.ingroup([capstone.x86.X86_GRP_CALL]):
+            value = None
+            asm = self._asm
+
+            for o in asm.operands:
+                if o.type == capstone.x86.X86_OP_IMM:
+                    value = o.imm
+
+                if o.type == capstone.x86.X86_OP_MEM:
+                    # todo: should we consider other reg relative ??
+                    if o.mem.base == capstone.x86.X86_REG_RIP:
+                        value = o.mem.disp + asm.size + asm.address
+
+                    # mainly 32bit
+                    if o.mem.base == capstone.x86.X86_REG_INVALID:
+                        value = o.mem.disp
+
+            if value:
+                sym = self._plugin.disasmSymbol(value)
+
+                if sym:
+                    self._symbol = sym
+
+        return self._symbol
 
     def isBranch(self):
         return self.ingroup([capstone.x86.X86_GRP_JUMP, capstone.x86.X86_GRP_CALL])
@@ -362,15 +381,12 @@ class ASMLine:
             o = asm.operands[0]
 
             if o.type == capstone.x86.X86_OP_MEM:
-                #if o.mem.base == capstone.x86.X86_REG_RIP:
                 x = asm.address + asm.size + o.mem.disp
                 return x
 
             if o.type == capstone.x86.X86_OP_IMM:
                 x = o.imm
                 return x
-
-
 
 
 class DisasmViewMode(ViewMode):
@@ -385,8 +401,6 @@ class DisasmViewMode(ViewMode):
 
         self.width = width
         self.height = height
-        #self.cursorX = 0
-        #self.cursorY = 0
 
         self.cursor = cursor
         self.widget = widget
@@ -418,10 +432,32 @@ class DisasmViewMode(ViewMode):
 
         self.FlowHistory = []
         self.OPCODES = []
-        self.ASMSeparators = ' ,.[]+-:'
-        self.ASM_RE = delim = '|'.join(map(re.escape, self.ASMSeparators))
 
         self.selector = TextSelection.DisasmSelection(self)
+
+        self.init_disassembler_engine()
+
+    def init_disassembler_engine(self):
+        # init state for disasambler
+        # set capstone, lexer, asmline
+
+        arch, mode = self.plugin.hintDisasm()
+        self.disasm_engine = capstone.Cs(arch, mode)
+        self.disasm_engine.detail = True
+
+        if arch == capstone.CS_ARCH_X86:
+            Lexer = X86_Lexer()
+
+        if arch == capstone.CS_ARCH_ARM and mode in [capstone.CS_MODE_ARM, capstone.CS_MODE_THUMB]:
+            Lexer = ARM_Lexer()
+
+        if arch == capstone.CS_ARCH_ARM64:
+            Lexer = ARM_Lexer()
+
+        # todo: ASM_ARM_Line?
+        self.ASMLine = ASMx86Line
+        Lexer.build()
+        self.lexer = Lexer.lexer()
 
     @property
     def fontWidth(self):
@@ -690,8 +726,7 @@ class DisasmViewMode(ViewMode):
         return 0
 
     def _getOpcodes(self, ofs, code, dt, count):
-        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-        md.detail = True
+        md = self.disasm_engine
         
         cnt = 0
         offset = 0
@@ -699,22 +734,23 @@ class DisasmViewMode(ViewMode):
         OPCODES = []
 
         # how ugly ... don't like capstone on this one..
-        while cnt < count and offset < len(code):
+        while cnt < count and offset < len(code) - 1:
             Disasm = md.disasm(code[offset:], self._getVA(ofs) + offset, count=count)
 
             # disasamble as much as we can
             for d in Disasm:
                 cnt += 1
                 offset += d.size
-                OPCODES.append(ASMLine(d, self.plugin))
+                OPCODES.append(self.ASMLine(d, self.plugin, self.lexer))
 
             # when we are stopped with errors, inject fake isntructions
-            if cnt < self.ROWS and offset < len(code):
+            if cnt < self.ROWS and offset < len(code) - 1:
                 class D:
                     mnemonic = 'db'
                     bytes = ''
                     op_str = ''
                     size = 1
+                    id = 0
                     address = 0
                     operands = []
                     groups = []
@@ -725,7 +761,7 @@ class DisasmViewMode(ViewMode):
 
                 d.address = self._getVA(ofs) + offset
 
-                OPCODES.append(ASMLine(d, self.plugin))
+                OPCODES.append(self.ASMLine(d, self.plugin, self.lexer))
                 cnt += 1
                 offset += 1
 
@@ -745,7 +781,6 @@ class DisasmViewMode(ViewMode):
         # let's color some branch instr
         if asm.isBranch():
             qp.setPen(QtGui.QPen(QtGui.QColor(255, 80, 0)))
-            asm.mnemonic = asm.mnemonic.upper()
         else:
             qp.setPen(QtGui.QPen(QtGui.QColor(192, 192, 192), 1, QtCore.Qt.SolidLine))
 
@@ -880,12 +915,6 @@ class DisasmViewMode(ViewMode):
     def _disassamble_one(self, start, end, count=1):
         code = str(self.dataModel.getStream(start, end))
         Disasm = self._getOpcodes(start, code, 0, count)
-        """
-        md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-        md.detail = True
-        code = str(self.dataModel.getStream(start, end))
-        Disasm = list(md.disasm(code, self._getVA(start), count=count))
-        """
         return Disasm
 
     def scroll_v(self, dy, cachePix=None, pageOffset=None):
@@ -928,20 +957,6 @@ class DisasmViewMode(ViewMode):
                 else:
                     #todo: what should we handle here
                     break
-                """
-                md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-                md.detail = True
-                code = str(self.dataModel.getStream(start, end))
-                Disasm = md.disasm(code, self._getVA(start), count=1)
-
-                for d in Disasm:
-                    d = d
-                    #self.OPCODES.append(ASMLine(d, self.plugin))
-                """
-
-                #iterable = distorm3.Decompose(self._getVA(start), str(self.dataModel.getStream(start, end)), self.plugin.hintDisasm())
-                # eat first instruction from the page
-                #d = iterable[0]
 
             if dy >= 0:
                 # we try to decode from current offset - 50, in this case even if decoding is incorrect (will overlap),
@@ -954,15 +969,6 @@ class DisasmViewMode(ViewMode):
 
 
                 end = self.dataModel.getOffset()
-                #print 'end ' + str(hex(end))
-
-                """
-                md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64)
-                md.detail = True
-
-                code = str(self.dataModel.getStream(start, end))
-                """
-                #iterable = list(md.disasm(code, self._getVA(start)))
                 iterable = self._disassamble_one(start, end, count=25)
                 #print iterable
                 if len(iterable) > 0:
