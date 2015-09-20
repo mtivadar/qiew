@@ -1,0 +1,9 @@
+[Core]
+Name = elf file format
+Module = elf
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = elf file format
