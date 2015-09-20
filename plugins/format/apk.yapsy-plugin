@@ -1,0 +1,9 @@
+[Core]
+Name = Android APK file
+Module = apk
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = Plugin APK files, using androguard
