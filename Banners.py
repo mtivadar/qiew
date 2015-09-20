@@ -23,6 +23,16 @@ class Banner(object):
     def changeDisplay(self):
         return
 
+    def setViewMode(self, viewMode):
+        self.viewMode = viewMode
+
+    def getPixmap(self):
+        return self.qpix
+
+    def _getNewPixmap(self, width, height):
+        return QtGui.QPixmap(width, height)
+
+
 Orientation = enum(Left=0, Bottom=1, Top=2)
 
 
