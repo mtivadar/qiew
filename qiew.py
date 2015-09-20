@@ -142,7 +142,7 @@ class binWidget(QtGui.QWidget, Observable):
         #self.data = mapped
         self.dataOffset = 0
         
-        self.dataModel = FileDataModel(source)
+        self.dataModel = source
         self.cursor = Cursor(0, 0)
 
         
@@ -211,7 +211,7 @@ class binWidget(QtGui.QWidget, Observable):
 
         self.initUI()
         
-        [po.init(viewMode) for viewMode in self.multipleViewModes]
+        [po.init(viewMode, parent=self) for viewMode in self.multipleViewModes]
 
         for banner in po.getBanners():
             self.Banners.add(banner)
@@ -363,11 +363,12 @@ class binWidget(QtGui.QWidget, Observable):
             # switch view mode
             if key == QtCore.Qt.Key_Tab:
                     offs = self.viewMode.getCursorOffsetInPage()
+                    base = self.viewMode.getDataModel().getOffset()
                     self.switchViewMode()
 
                     self._resize()
 
-                    self.viewMode.goTo(offs + self.viewMode.getDataModel().getOffset())
+                    self.viewMode.goTo(base + offs)
 
                     self.update()
 
@@ -770,9 +771,14 @@ class SearchWindow(QtGui.QDialog):
 
 class Qiew(QtGui.QWidget):
     
-    def __init__(self):
+    def __init__(self, source, title):
         super(Qiew, self).__init__()
+        self._source = source
+        self._title = title
         self.initUI()
+
+    def factory(self):
+        return self.__class__
 
     def closeEvent(self, event):
         if not self.wid.needsSave():
@@ -794,23 +800,17 @@ class Qiew(QtGui.QWidget):
 
     def initUI(self):      
 
-        if len(sys.argv) <= 1:
-            print 'usage: qiew.py <file>'
-            sys.exit()
-
-        title = sys.argv[1]
-
-        self.wid = binWidget(self, title)
+        self.wid = binWidget(self, self._source)
         
-        hbox = QtGui.QHBoxLayout()
-        hbox.addWidget(self.wid)
-        self.setLayout(hbox)
+        self.hbox = QtGui.QHBoxLayout()
+        self.hbox.addWidget(self.wid)
+        self.setLayout(self.hbox)
 
         screen = QtGui.QDesktopWidget().screenGeometry()        
         self.setGeometry(0, 0, screen.width()-100, screen.height()-100)
 
-        self.setWindowTitle('qiew - {0}'.format(sys.argv[1]))
-        self.showMaximized()
+        self.setWindowTitle(self._title)
+        #self.showMaximized()
         self.wid.activateWindow()
 
         self.raise_()
@@ -820,8 +820,18 @@ class Qiew(QtGui.QWidget):
         return self.wid.eventFilter(watched, event)
 
 def main():
+    if len(sys.argv) <= 1:
+        print 'usage: qiew.py <file>'
+        sys.exit()
+
     app = QtGui.QApplication(sys.argv)
-    qiew = Qiew()
+
+    filename = sys.argv[1]
+    source = FileDataModel(filename)
+
+    qiew = Qiew(source, 'qiew - {0}'.format(filename))
+    qiew.showMaximized()
+
     sys.exit(app.exec_())
 
 
