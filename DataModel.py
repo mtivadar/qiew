@@ -223,3 +223,28 @@ class FileDataModel(DataModel):
 
     def size(self):
         return os.path.getsize(self._filename)
+
+class BufferDataModel(DataModel):
+    def __init__(self, data, name):
+        self._filename = name
+
+        self.data = bytearray(data)
+
+        super(BufferDataModel, self).__init__(self.data)
+
+    @property
+    def source(self):
+        return self._filename
+
+    def flush(self):
+        return False
+
+    def close(self):
+        return
+
+#    def write(self, offset, stream):
+#        self._mapped.seek(offset)
+#        self._mapped.write(stream)
+
+    def size(self):
+        return len(data)
