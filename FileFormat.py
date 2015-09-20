@@ -1,5 +1,4 @@
 from yapsy.IPlugin import IPlugin
-import distorm3 # for interface, should be moved
 from PyQt4 import QtGui, QtCore
 import PyQt4
 import os, sys
@@ -34,11 +33,13 @@ class IDisasm():
 class FileFormat(IPlugin, IDisasm, Observer):
     name = ''
     _Shortcuts = []
+    redbrush = QtGui.QBrush(QtGui.QColor(128, 0, 0))
+    yellowpen = QtGui.QPen(QtGui.QColor(255, 255, 0))
 
     def isRecognized(self):
         return False
 
-    def init(self, viewMode):
+    def init(self, viewMode, parent):
         pass
 
     def getShortcuts(self):
