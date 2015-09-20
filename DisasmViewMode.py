@@ -46,11 +46,12 @@ class ARM_Lexer(ASMLexer):
     def __init__(self):
 
         self._loaded = True
+        print 'vreau cuc'
 
-        my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr'
-        my_t_NUMBER = r'\#-?0x[0-9a-f]+|[0-9]+'
-        my_t_PTR = r'qword|dword|word|byte|ptr|xmmword'
-        my_t_ignore = r' [],+:*{}^'
+        my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr|apsr_nzcv'
+        my_t_NUMBER = r'\#?-?(0x)?[0-9a-f]+|[0-9]+'
+        my_t_PTR = r'qword|dword|word|byte|ptr|xmmword|ror'
+        my_t_ignore = r' [],+:*{}^!-'
 
         self.set('t_REGISTER', my_t_REGISTER)
         self.set('t_NUMBER', my_t_NUMBER)
@@ -71,7 +72,6 @@ class ARM_Lexer(ASMLexer):
 
 class ARM64_Lexer(ASMLexer):
     def __init__(self):
-
         self._loaded = True
 
         my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr'
@@ -513,10 +513,13 @@ class DisasmViewMode(ViewMode):
     def stopSelection(self):
         self.selector.stopSelection()
 
-    def getCursorAbsolutePosition(self):
+    def getCursorOffsetInPage(self):
         x, y = self.cursor.getPosition()
 
         preY = sum([asm.size for asm in self.OPCODES[:y]])
+
+        if len(self.OPCODES) - 1 < y:
+            return 0
 
         asm = self.OPCODES[y]
 
@@ -525,7 +528,11 @@ class DisasmViewMode(ViewMode):
         else:
             postY = asm.size
 
-        return self.dataModel.getOffset() + preY + postY
+        return preY + postY
+
+    def getCursorAbsolutePosition(self):
+        offset = self.getCursorOffsetInPage()
+        return self.dataModel.getOffset() + offset
 
     def drawCursor(self, qp):
         cursorX, cursorY = self.cursor.getPosition()
@@ -547,6 +554,9 @@ class DisasmViewMode(ViewMode):
         qp.setFont(self.font)
 
         cursorX, cursorY = self.cursor.getPosition()
+
+        if len(self.OPCODES) - 1 < cursorY:
+            return
 
         asm = self.OPCODES[cursorY]
         cx, width, text = asm.getSelectedToken(cursorX)
@@ -572,6 +582,9 @@ class DisasmViewMode(ViewMode):
         qp.fillRect(-50, 0, 50,  self.ROWS * self.fontHeight, self.backgroundBrush)
 
         cursorX, cursorY = self.cursor.getPosition()
+
+        if len(self.OPCODES) - 1 < cursorY:
+            return
 
         asm = self.OPCODES[cursorY]
 
@@ -734,7 +747,7 @@ class DisasmViewMode(ViewMode):
         OPCODES = []
 
         # how ugly ... don't like capstone on this one..
-        while cnt < count and offset < len(code) - 1:
+        while cnt < count and offset < len(code):
             Disasm = md.disasm(code[offset:], self._getVA(ofs) + offset, count=count)
 
             # disasamble as much as we can
@@ -744,7 +757,7 @@ class DisasmViewMode(ViewMode):
                 OPCODES.append(self.ASMLine(d, self.plugin, self.lexer))
 
             # when we are stopped with errors, inject fake isntructions
-            if cnt < self.ROWS and offset < len(code) - 1:
+            if cnt < self.ROWS and offset < len(code):
                 class D:
                     mnemonic = 'db'
                     bytes = ''
@@ -960,25 +973,23 @@ class DisasmViewMode(ViewMode):
 
             if dy >= 0:
                 # we try to decode from current offset - 50, in this case even if decoding is incorrect (will overlap),
-                # in 50 bytes it is possible to correct itself, so hopefully last instruction it's decoded correctly and
+                # in 50 (actually 64, arm hack, we have 4bytes/instr and instruction is almoast always decoded in something) 
+                # bytes it is possible to correct itself, so hopefully last instruction it's decoded correctly and
                 # followed correctly by current_offset instruction
-                if self.dataModel.getOffset() < 50:
+
+                INST = 64
+                if self.dataModel.getOffset() < INST:
                     start = 0
                 else:
-                    start = self.dataModel.getOffset() - 50
+                    start = self.dataModel.getOffset() - INST
 
 
                 end = self.dataModel.getOffset()
-                iterable = self._disassamble_one(start, end, count=25)
+                iterable = self._disassamble_one(start, end, count=INST)
                 #print iterable
                 if len(iterable) > 0:
                     d = iterable[-1]
-                else:
-                    # TODO: 
-                    print 'bbbbbbbbbbbbbbb'
-                    break
-            #hexstr = self.hexlify(self.dataModel.getStream(start + d.address, start + d.address + d.size))
-            #newasm = ASMLine(d, self.plugin)
+
             newasm = d
 
             if dy < 0:
@@ -989,9 +1000,6 @@ class DisasmViewMode(ViewMode):
             if dy >= 0:
                 self.dataModel.slide(-d.size)
                 del self.OPCODES[len(self.OPCODES) - 1]
-
-            
-
 
             if dy < 0:
                 self.OPCODES.append(newasm)
@@ -1094,6 +1102,9 @@ class DisasmViewMode(ViewMode):
                 self.cursor.moveAbsolute(0, cursorY)
 
             else:
+                if cursorY + dy >= len(self.OPCODES):
+                    dy = 0
+
                 self.cursor.move(x-cursorX, dy)
 
         if direction == Directions.Down:
@@ -1103,9 +1114,10 @@ class DisasmViewMode(ViewMode):
                 self.cursor.moveAbsolute(0, cursorY)
             else:
                 # move next line, to nearest token on columns
-                asm = self.OPCODES[cursorY + 1]
-                x = asm.getNearestCursor(cursorX)
-                self.cursor.moveAbsolute(x, cursorY + 1)
+                if cursorY + 1 < len(self.OPCODES):
+                    asm = self.OPCODES[cursorY + 1]
+                    x = asm.getNearestCursor(cursorX)
+                    self.cursor.moveAbsolute(x, cursorY + 1)
 
         if direction == Directions.Up:
             if cursorY == 0:
