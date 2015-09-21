@@ -64,8 +64,8 @@ class ARM_Lexer(ASMLexer):
         t.type = t.value[0]
         t.value = t.value[0]
         t.lexer.skip(1)
-        print t.value
-        print 'LEXER ERROR'
+        #print t.value
+        #print 'LEXER ERROR'
         return t
 
 
@@ -90,8 +90,8 @@ class ARM64_Lexer(ASMLexer):
         t.type = t.value[0]
         t.value = t.value[0]
         t.lexer.skip(1)
-        print t.value
-        print 'LEXER ERROR'
+        #print t.value
+        #print 'LEXER ERROR'
         return t
 
 
@@ -119,8 +119,8 @@ class X86_Lexer(ASMLexer):
         print t.value
         t.value = t.value[0]
         t.lexer.skip(1)
-        print t.value
-        print 'LEXER ERROR'
+        #print t.value
+        #print 'LEXER ERROR'
         return t
 
 
