@@ -4,11 +4,11 @@ from cx_Freeze import setup, Executable
 #sys.path.append('sbu_scripts/')
 #sys.path.append('lib/')
 
-binincludes = ['distorm3.dll']
+binincludes = ['capstone.dll']
 binpaths = ['.']
 #includefiles = [('lib/libcrypto.so.1.0.0','lib/libcrypto.so.1.0.0'),]
 includefiles = [('plugins'),
-                (r'C:\Tools\Work\Work\Qiew\distorm3.dll', 'distorm3.dll')]
+                ('capstone.dll')]
 
 exe = Executable(
     script="qiew.py",

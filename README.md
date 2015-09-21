@@ -27,7 +27,7 @@ and install [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download).
 
 Otherwise run
 ```
-pip install pefile pyperclip pyaes ply pyelftools androguard
+pip install yapsy pefile pyperclip pyaes ply pyelftools androguard
 ```
 and manually install [**Capstone**](http://www.capstone-engine.org/documentation.html) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
 

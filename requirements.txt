@@ -1,3 +1,4 @@
+yapsy
 pefile
 pyperclip
 pyaes
