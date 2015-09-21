@@ -6,4 +6,4 @@ notepad*
 terminus*
 mbr.API
 build
-!testfiles
+*testfiles*
