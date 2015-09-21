@@ -46,7 +46,6 @@ class ARM_Lexer(ASMLexer):
     def __init__(self):
 
         self._loaded = True
-        print 'vreau cuc'
 
         my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr|apsr_nzcv'
         my_t_NUMBER = r'\#?-?(0x)?[0-9a-f]+|[0-9]+'
@@ -442,6 +441,7 @@ class DisasmViewMode(ViewMode):
         # set capstone, lexer, asmline
 
         arch, mode = self.plugin.hintDisasm()
+
         self.disasm_engine = capstone.Cs(arch, mode)
         self.disasm_engine.detail = True
 
