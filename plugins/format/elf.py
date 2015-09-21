@@ -19,7 +19,7 @@ class ELF(FileFormat):
         self.dataModel = dataModel
         try:
             self.elf = ELFFile(self.dataModel.getData())
-        except:
+        except Exception, e:
             return False
 
         return True
