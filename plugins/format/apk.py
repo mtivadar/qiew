@@ -16,6 +16,8 @@ from androguard.core import bytecode
 from androguard.core.bytecodes import apk
 from androguard.core import androconf
 
+import DisasmViewMode
+
 class APK(FileFormat):
     name = 'apk'
     priority = 5
@@ -34,9 +36,6 @@ class APK(FileFormat):
         return False
 
 
-    def changeAddressMode(self):
-        self.DisplayTypes = self.DisplayTypes[1:] + [self.DisplayTypes[0]]
-
     def init(self, viewMode, parent):
         self._viewMode = viewMode
         self._parent = parent
@@ -53,6 +52,9 @@ class APK(FileFormat):
         self.publishAPKInfo()
         return
         
+    def hintDisasm(self):
+        return DisasmViewMode.Disasm_x86_32bit
+
 
     def getBanners(self):
         self.banners = [Banners.TopBanner(self.dataModel, self._viewMode), Banners.FileAddrBanner(self.dataModel, self._viewMode),
@@ -118,7 +120,12 @@ class APK(FileFormat):
             self.w.ui.listPerm.setFocus()
 
             #q = self._parent.parent.factory(DataModel.BufferDataModel(self.apk.get_dex(), 'classes.dex'), 'classes.dex')
-            source = DataModel.BufferDataModel(self.apk.get_dex(), 'classes.dex')
+            import zipfile
+            zip_file = zipfile.ZipFile(self.dataModel.source)
+
+            newfile = zip_file.open('AndroidManifest.xml')
+            #source = DataModel.BufferDataModel(self.apk.get_dex(), 'classes.dex')
+            source = DataModel.BufferDataModel(newfile.read(), 'manige')
             q = self._parent.parent.factory()(source, 'classes.dex')
             #self._parent.parent.hbox.addWidget(q)
             q.setParent(self._parent.parent, QtCore.Qt.Dialog | QtCore.Qt.WindowMinimizeButtonHint )
@@ -136,6 +143,8 @@ class APK(FileFormat):
             self.w.ui.ep.setFocus()
 
     def showFiles(self):
+        self.tab_e = TabWidEventFilter(self)
+        self.w.ui.files.installEventFilter(self.tab_e)
         if not self.w.isVisible():
             self.w.show()
             self.w.ui.tabWidget.setFocus()
@@ -192,6 +201,33 @@ class WHeaders(QtGui.QDialog):
 
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+F"), self, self.close, self.close)
 
+class TabWidEventFilter(QtCore.QObject):
+    def __init__(self, plugin):
+        super(QtCore.QObject, self).__init__()
+#        self.widget = widget
+        self.plugin = plugin
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key() == QtCore.Qt.Key_Return:
+                L = watched.selectedItems()
+                if len(L) > 0:
+                    filename = str(L[0].text(0))
+
+                import zipfile
+
+                #filename = 'AndroidManifest.xml'
+                #self.plugin.
+                print 'Loading ' + filename
+                zip_file = zipfile.ZipFile(self.plugin.dataModel.source)
+                newfile = zip_file.open(filename)
+                source = DataModel.BufferDataModel(newfile.read(), filename)
+                q = self.plugin._parent.parent.factory()(source, filename)
+                q.setParent(self.plugin._parent.parent, QtCore.Qt.Dialog | QtCore.Qt.WindowMinimizeButtonHint )
+                q.resize(900, 600)
+                q.show()
+
+
+        return False
 
 class APKBottomBanner(Banners.BottomBanner):
     def __init__(self, dataModel, viewMode, plugin):
