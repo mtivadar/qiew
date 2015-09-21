@@ -3,6 +3,8 @@ from PyQt4 import QtGui, QtCore
 import PyQt4
 import os, sys
 
+#import DisasmViewMode
+
 class Observer:
     def changeViewMode(self, viewMode):
         self._viewMode = viewMode
@@ -13,11 +15,12 @@ class IDisasm():
 
     # tells disasm view what to decode
     def hintDisasm(self):
-        return None
+        return None, None
+        #return DisasmViewMode.Disasm_x86_32bit
 
     # calculates va for disasm mode
-    def hintDisasmVA(self):
-        return None
+    def hintDisasmVA(self, offset):
+        return offset
 
     # returns ascii string in disasm view (from a va)
     def stringFromVA(self, va):
