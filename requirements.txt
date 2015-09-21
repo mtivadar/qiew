@@ -1,4 +1,7 @@
-distorm3
 pefile
 pyperclip
 pyaes
+capstone
+ply
+pyelftools
+androguard
