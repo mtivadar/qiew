@@ -38,8 +38,9 @@ and manually install [**Capstone**](http://www.capstone-engine.org/documentation
   * **bootsector**
 
   * **ELF**
-  * 
+  
   * **APK**
+  
 ## Binary view mode
 ![binview](https://github.com/mtivadar/qiew/blob/master/wiki/binview.png)
 ## Hex view mode
