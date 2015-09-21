@@ -27,9 +27,9 @@ and install [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download).
 
 Otherwise run
 ```
-pip install pefile pyperclip pyaes
+pip install pefile pyperclip pyaes ply pyelftools
 ```
-and manually install [**diStorm3**](https://code.google.com/p/distorm/downloads/list) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
+and manually install [**capstone**](http://www.capstone-engine.org/documentation.html) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
 
 
 ## Available plugins
