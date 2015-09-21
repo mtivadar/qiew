@@ -29,7 +29,7 @@ Otherwise run
 ```
 pip install pefile pyperclip pyaes ply pyelftools
 ```
-and manually install [**capstone**](http://www.capstone-engine.org/documentation.html) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
+and manually install [**Capstone**](http://www.capstone-engine.org/documentation.html) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
 
 
 ## Available plugins
@@ -44,6 +44,6 @@ and manually install [**capstone**](http://www.capstone-engine.org/documentation
 ## Disassembly view mode
 ![disasmview](https://github.com/mtivadar/qiew/blob/master/wiki/disasmview.png)
 
-Powered by: Python, Qt4, [Terminus font](http://terminus-font.sourceforge.net/), [pefile](https://github.com/erocarrera/pefil), [distorm](https://github.com/gdabah/distorm)
+Powered by: Python, Qt4, [Terminus font](http://terminus-font.sourceforge.net/), [pefile](https://github.com/erocarrera/pefil), [capstone](http://www.capstone-engine.org/index.html)
 
 [see wiki](https://github.com/mtivadar/qiew/wiki)
