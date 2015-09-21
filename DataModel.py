@@ -224,11 +224,59 @@ class FileDataModel(DataModel):
     def size(self):
         return os.path.getsize(self._filename)
 
+def f():
+    return 5
+
+import StringIO
+class MyStringIO(StringIO.StringIO, object):
+    def __init__(self, data):
+        self.raw = data
+        super(MyStringIO, self).__init__(data)
+
+    def __len__(self):
+        return len(self.raw)
+
+class MyByte(bytearray):
+    def __init__(self, data):
+        self.raw = data
+        self._pointer = 0
+        super(MyByte, self).__init__(data)
+
+    def __len__(self):
+        return len(self.raw)
+
+    def seek(self, a, b=0):
+        if b == 0:
+            self._pointer = a
+        elif b == 1:
+            self._pointer += a
+        elif b == 2:
+            self._pointer = len(self.raw) - b
+        else:
+            return
+
+        return
+
+    def read(self, size):
+        if self._pointer + size > len(self.raw):
+            return ''
+
+        data = str(self.raw[self._pointer:self._pointer + size])
+        self._pointer += size
+        return data
+
 class BufferDataModel(DataModel):
     def __init__(self, data, name):
         self._filename = name
-
-        self.data = bytearray(data)
+        self.raw = data
+        #import StringIO
+#        self.data = bytearray(data)
+#        self.data = bytearray(data)
+        self.data = MyByte(data)
+        #self.data.__len__ = f
+        #self.data.__len__ = self.data.len
+        #print self.data.len
+        #self.data.__len__ = f
 
         super(BufferDataModel, self).__init__(self.data)
 
