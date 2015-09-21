@@ -47,6 +47,7 @@ and manually install [**Capstone**](http://www.capstone-engine.org/documentation
 ![hexview](https://github.com/mtivadar/qiew/blob/master/wiki/hexview.png)
 ## Disassembly view mode
 ![disasmview](https://github.com/mtivadar/qiew/blob/master/wiki/disasmview.png)
+![disasmview](https://github.com/mtivadar/qiew/blob/master/wiki/disasmview2.png)
 
 Powered by: Python, Qt4, [Terminus font](http://terminus-font.sourceforge.net/), [pefile](https://github.com/erocarrera/pefil), [Capstone](http://www.capstone-engine.org/index.html)
 
