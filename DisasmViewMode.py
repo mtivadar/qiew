@@ -116,7 +116,6 @@ class X86_Lexer(ASMLexer):
 
     def my_t_error(self, t):
         t.type = t.value[0]
-        print t.value
         t.value = t.value[0]
         t.lexer.skip(1)
         #print t.value
