@@ -50,6 +50,7 @@ class HexViewMode(ViewMode):
         self.highpart = True
         self.resize(width, height)
 
+        self.ann_w = Annotation(self.widget, self)
 
     @property
     def fontWidth(self):
@@ -603,7 +604,17 @@ class HexViewMode(ViewMode):
                 if key in keys:
                     self.startSelection()
 
+                if key == QtCore.Qt.Key_Question:
+                    self.annotationWindow()
+
+            if modifiers == QtCore.Qt.AltModifier:
+                if key == QtCore.Qt.Key_A:
+                    self.add_annotation(1)
+
+
             if modifiers == QtCore.Qt.ControlModifier:
+                if key == QtCore.Qt.Key_A:
+                    self.add_annotation(2)
 
                 if key == QtCore.Qt.Key_Right:
                     self.addop((self.anon, -1, 0))
@@ -711,3 +722,192 @@ class HexViewMode(ViewMode):
 
         s += self.gap*' ' + 'Text'
         return s
+
+
+    def annotationWindow(self):
+        w = self.ann_w.treeWidget
+
+        w.setDragEnabled(True)
+        w.viewport().setAcceptDrops(True)
+        w.setDropIndicatorShown(True)
+
+        self.ann_w.show()
+
+
+    @QtCore.pyqtSlot("QItemSelection, QItemSelection")
+    def test(self, selected, deselected):
+
+         item = self.ann_w.treeWidget.currentItem()
+         if item:
+            offset = int(str(item.text(1)),0)
+            size = int(str(item.text(2)),0)
+            u = offset
+            v = offset + size
+            self.selector.addSelection((u, v, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.2), type=TextSelection.SelectionType.NORMAL)
+            self.goTo(u)
+
+
+    def add_annotation(self, mode):
+        QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.test)
+
+
+        ID_NAME = 0
+        ID_OFFSET = 1
+        ID_SIZE = 2
+        ID_VALUE = 3
+        ID_DESCRIPTION = 4
+
+        if self.selector.getCurrentSelection():
+            u, v = self.selector.getCurrentSelection()
+        else:
+            return
+
+        import random
+        r = random.randint(0, 255)
+        g = random.randint(0, 255)
+        b = random.randint(0, 255)
+
+        added = self.selector.addSelection((u, v, QtGui.QBrush(QtGui.QColor(r, g, b)), 0.3), type=TextSelection.SelectionType.PERMANENT)
+
+#        if not added:
+#            return
+
+        t = self.ann_w.treeWidget
+
+        row = QtGui.QTreeWidgetItem(None)
+        row.setFlags(QtCore.Qt.ItemIsSelectable |
+                  QtCore.Qt.ItemIsEnabled |
+                  QtCore.Qt.ItemIsEditable |
+                  QtCore.Qt.ItemIsDropEnabled |
+                  QtCore.Qt.ItemIsDragEnabled)
+
+        t.setAcceptDrops(True)
+        t.setDragEnabled(True)
+        t.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+
+        row.setText(ID_NAME, 'field_0')
+        row.setText(ID_OFFSET, hex(u))
+
+        """
+        cmb = ComboBoxItem(row, ID_SIZE)
+        cmb.addItem("byte", "byte")
+        cmb.addItem("word", "word")
+        cmb.addItem("dword", "dword")
+        cmb.addItem("string", "string")
+        """
+        size = v - u
+        row.setText(ID_SIZE, hex(size))
+
+        w = None
+        if size == 1:
+            w = 'byte'
+        elif size == 2:
+            w = 'word'
+        elif size == 4:
+            w = 'dword'
+        else:
+            w = 'string'
+
+
+        value = ''
+        if size == 1:
+            value = self.dataModel.getBYTE(u, asString=True)
+        elif size == 2:
+            value = self.dataModel.getWORD(u, asString=True)
+        elif size == 4:
+            value = self.dataModel.getDWORD(u, asString=True)
+        else:
+            value = repr(str(self.dataModel.getStream(u, v)))
+
+
+        row.setText(ID_VALUE, value)
+
+        #cmb.setCurrentIndex(cmb.findData(w))
+
+        if mode == 2:
+            self.ann_w.treeWidget.addTopLevelItem(row)
+
+        if mode == 1:
+            selected = t.selectedItems()
+            if len(selected) == 1:
+                selected = selected[0]
+            else:
+                selected = t.topLevelItem(0)
+
+            if selected:
+                selected.addChild(row)
+
+        t.expandItem(row)
+        #self.ann_w.treeWidget.setItemWidget(row, ID_SIZE, cmb)
+        #self.ann_w.treeWidget.openPersistentEditor(row, 0)
+        self.ann_w.treeWidget.editItem(row, 0)
+        self.ann_w.treeWidget.editItem(row, 3)
+
+
+class ComboBoxItem(QtGui.QComboBox):
+    def __init__(self, item, column):
+        super(ComboBoxItem, self).__init__()
+
+        self.item = item
+        self.column = column
+
+class Annotation(QtGui.QDialog):
+    
+    def __init__(self, parent, view):
+        super(Annotation, self).__init__(parent)
+        
+        self.parent = parent
+        self.view = view
+        self.oshow = super(Annotation, self).show
+
+        import os
+        root = os.path.dirname(sys.argv[0])
+        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)
+
+#        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
+
+        self.ei = treeEventFilter(self.ui.treeWidget)
+        self.ui.treeWidget.installEventFilter(self.ei)
+
+        self.initUI()
+
+
+    def show(self):
+
+        # TODO: remember position? resize plugin windows when parent resize?
+        pwidth = self.parent.parent.size().width()
+        pheight = self.parent.parent.size().height()
+
+        width = self.ui.treeWidget.size().width()+15
+        height = self.ui.treeWidget.size().height()+15
+
+        self.setGeometry(pwidth - width - 15, pheight - height, width, height)
+        self.setFixedSize(width, height)
+
+        self.oshow()
+
+    def initUI(self):      
+
+        self.setWindowTitle('Annotations')
+        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+
+        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Shift+/"), self, self.close, self.close)
+
+class treeEventFilter(QtCore.QObject):
+    def __init__(self, widget):
+        super(QtCore.QObject, self).__init__()
+        self.widget = widget
+
+    def eventFilter(self, watched, event):
+        if event.type() == QtCore.QEvent.KeyPress:
+            if event.key() == QtCore.Qt.Key_Delete:
+
+                # get RVA column from treeView
+                item = self.widget.currentItem()
+                item.parent().removeChild(item)
+                #self.widget.takeTopLevelItem(self.widget.indexOfTopLevelItem(item))
+                #print item
+                #rva = self.widget.indexFromItem(item, 1).data().toString()
+
+        return False
+
