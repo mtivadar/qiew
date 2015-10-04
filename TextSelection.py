@@ -51,11 +51,17 @@ class Selection(object):
             self.Selections.append(t)
 
         if type == SelectionType.PERMANENT:
-            if t not in self.PermanentSelections:
-                self.PermanentSelections.append(t)
+            for w in self.PermanentSelections:
+                if t[0] == w[0] and t[1] == w[1]:
+                    return False
+
+            # u, v not found
+            self.PermanentSelections.append(t)
 
         if type == SelectionType.TEXTHIGHLIGHT:
             self.HighlightSelections.append(t)
+
+        return True
 
     def drawSelections(self, qp):
         # draw permanent
