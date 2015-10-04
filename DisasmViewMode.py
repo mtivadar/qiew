@@ -23,7 +23,9 @@ Disasm_x86_16bit = (capstone.CS_ARCH_X86, capstone.CS_MODE_16)
 Disasm_x86_32bit = (capstone.CS_ARCH_X86, capstone.CS_MODE_32)
 Disasm_x86_64bit = (capstone.CS_ARCH_X86, capstone.CS_MODE_64)
 
-Disasm_ARM = (capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+#Disasm_ARM = (capstone.CS_ARCH_ARM, capstone.CS_MODE_ARM)
+Disasm_ARM = (capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
+
 Disasm_ARM_Thumb = (capstone.CS_ARCH_ARM, capstone.CS_MODE_THUMB)
 Disasm_ARM64 = (capstone.CS_ARCH_ARM64, capstone.CS_MODE_ARM)
 
@@ -73,8 +75,8 @@ class ARM64_Lexer(ASMLexer):
     def __init__(self):
         self._loaded = True
 
-        my_t_REGISTER = r'[pcdr][0-9][1-9]*|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr'
-        my_t_NUMBER = r'\#-?0x[0-9a-f]+|[0-9]+'
+        my_t_REGISTER = r'[pcdr][0-9][1-9]+|sb|sl|fp|ip|sp|lr|pc!?|lsr|lsl|asr|wzr|xzr|[xw][0-9]+|v[0-9]+(\.16b)?'
+        my_t_NUMBER = r'\#-?0x[0-9a-f]+|[0-9]+|\#[0-9]+'
         my_t_PTR = r'qword|dword|word|byte|ptr|xmmword'
         my_t_ignore = r' [],+:*{}^'
 
@@ -451,7 +453,7 @@ class DisasmViewMode(ViewMode):
             Lexer = ARM_Lexer()
 
         if arch == capstone.CS_ARCH_ARM64:
-            Lexer = ARM_Lexer()
+            Lexer = ARM64_Lexer()
 
         # todo: ASM_ARM_Line?
         self.ASMLine = ASMx86Line
