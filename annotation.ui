@@ -47,6 +47,11 @@
      <string>Description</string>
     </property>
    </column>
+   <column>
+    <property name="text">
+     <string>Color</string>
+    </property>
+   </column>
   </widget>
   <widget class="QPushButton" name="pushButton">
    <property name="geometry">

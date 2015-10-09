@@ -610,6 +610,7 @@ class HexViewMode(ViewMode):
             if modifiers == QtCore.Qt.AltModifier:
                 if key == QtCore.Qt.Key_A:
                     self.add_annotation(1)
+                    return True
 
 
             if modifiers == QtCore.Qt.ControlModifier:
@@ -735,20 +736,37 @@ class HexViewMode(ViewMode):
 
 
     @QtCore.pyqtSlot("QItemSelection, QItemSelection")
-    def test(self, selected, deselected):
+    def selectionChanged(self, selected, deselected):
 
          item = self.ann_w.treeWidget.currentItem()
+       
          if item:
-            offset = int(str(item.text(1)),0)
-            size = int(str(item.text(2)),0)
+            offset = item.getOffset()
+            size = item.getSize()
             u = offset
             v = offset + size
             self.selector.addSelection((u, v, QtGui.QBrush(QtGui.QColor(125, 255, 0)), 0.2), type=TextSelection.SelectionType.NORMAL)
             self.goTo(u)
 
+    @QtCore.pyqtSlot("QTreeWidgetItem*, int")
+    def itemChanged(self, item, column):
+
+        ID_NAME = 0
+        ID_DESCRIPTION = 4
+
+
+        s = unicode(item.text(column))
+        
+        if column == ID_NAME:
+            item.setName(s)
+
+        if column == ID_DESCRIPTION:
+            item.setDescription(s)
+
 
     def add_annotation(self, mode):
-        QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.test)
+        QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.selectionChanged)
+        QtCore.QObject.connect(self.ann_w.treeWidget, QtCore.SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.itemChanged)
 
 
         ID_NAME = 0
@@ -756,6 +774,7 @@ class HexViewMode(ViewMode):
         ID_SIZE = 2
         ID_VALUE = 3
         ID_DESCRIPTION = 4
+        ID_COLOR = 5
 
         if self.selector.getCurrentSelection():
             u, v = self.selector.getCurrentSelection()
@@ -767,14 +786,19 @@ class HexViewMode(ViewMode):
         g = random.randint(0, 255)
         b = random.randint(0, 255)
 
-        added = self.selector.addSelection((u, v, QtGui.QBrush(QtGui.QColor(r, g, b)), 0.3), type=TextSelection.SelectionType.PERMANENT)
+        opacity = 0.4
+        if mode == 2:
+            opacity = 0.25
+
+        qcolor = QtGui.QColor(r, g, b)
+        added = self.selector.addSelection((u, v, QtGui.QBrush(qcolor), opacity), type=TextSelection.SelectionType.PERMANENT)
 
 #        if not added:
 #            return
 
         t = self.ann_w.treeWidget
 
-        row = QtGui.QTreeWidgetItem(None)
+        row = AnnonItem(None, self.ann_w.treeWidget, qcolor.name())
         row.setFlags(QtCore.Qt.ItemIsSelectable |
                   QtCore.Qt.ItemIsEnabled |
                   QtCore.Qt.ItemIsEditable |
@@ -785,29 +809,20 @@ class HexViewMode(ViewMode):
         t.setDragEnabled(True)
         t.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
 
-        row.setText(ID_NAME, 'field_0')
-        row.setText(ID_OFFSET, hex(u))
+        delegate = NoEditDelegate()
+        t.setItemDelegateForColumn(1, delegate)
+        t.setItemDelegateForColumn(2, delegate)
+        t.setItemDelegateForColumn(3, delegate)
+        t.setItemDelegateForColumn(5, delegate)
 
-        """
-        cmb = ComboBoxItem(row, ID_SIZE)
-        cmb.addItem("byte", "byte")
-        cmb.addItem("word", "word")
-        cmb.addItem("dword", "dword")
-        cmb.addItem("string", "string")
-        """
+        row.setName('field_0')
+        row.setOffset(u)
+        #row.setText(ID_NAME, 'field_0')
+        #row.setText(ID_OFFSET, hex(u))
+
         size = v - u
-        row.setText(ID_SIZE, hex(size))
-
-        w = None
-        if size == 1:
-            w = 'byte'
-        elif size == 2:
-            w = 'word'
-        elif size == 4:
-            w = 'dword'
-        else:
-            w = 'string'
-
+        #row.setText(ID_SIZE, hex(size))
+        row.setSize(size)
 
         value = ''
         if size == 1:
@@ -820,7 +835,8 @@ class HexViewMode(ViewMode):
             value = repr(str(self.dataModel.getStream(u, v)))
 
 
-        row.setText(ID_VALUE, value)
+        #row.setText(ID_VALUE, value)
+        row.setValue(value)
 
         #cmb.setCurrentIndex(cmb.findData(w))
 
@@ -838,11 +854,134 @@ class HexViewMode(ViewMode):
                 selected.addChild(row)
 
         t.expandItem(row)
-        #self.ann_w.treeWidget.setItemWidget(row, ID_SIZE, cmb)
-        #self.ann_w.treeWidget.openPersistentEditor(row, 0)
-        self.ann_w.treeWidget.editItem(row, 0)
-        self.ann_w.treeWidget.editItem(row, 3)
 
+        #cmb = QColorButton()
+        #cmb.setColor(qcolor.name())
+        #self.ann_w.treeWidget.setItemWidget(row, ID_COLOR, cmb)
+
+        self.ann_w.treeWidget.setItemWidget(row, ID_COLOR, row.cmb)
+
+        #self.ann_w.treeWidget.openPersistentEditor(row, 0)
+        #self.ann_w.treeWidget.editItem(row, 0)
+        #self.ann_w.treeWidget.editItem(row, 3)
+
+class NoEditDelegate(QtGui.QStyledItemDelegate):
+    def __init__(self, parent=None):
+        super(NoEditDelegate, self).__init__(parent)
+
+    def createEditor(self, parent, option, index):
+        return None
+
+class AnnonItem(QtGui.QTreeWidgetItem):
+    ID_NAME = 0
+    ID_OFFSET = 1
+    ID_SIZE = 2
+    ID_VALUE = 3
+    ID_DESCRIPTION = 4
+    ID_COLOR = 5
+
+
+    def __init__(self, x, parent, color):
+        super(AnnonItem, self).__init__(x)
+        self._color = color
+        self._t_parent = parent
+
+        self.cmb = QColorButton()
+        self.cmb.setColor(self._color)
+
+        #self._t_parent.setItemWidget(self, self.ID_COLOR, self.cmb)
+
+
+
+    def setName(self, name):
+        self._name = name
+        self.setText(self.ID_NAME, name)
+
+    def getName(self):
+        return self._name
+
+    def setOffset(self, offset):
+        self._offset = offset
+        self.setText(self.ID_OFFSET, hex(offset))
+
+    def getOffset(self):
+        return self._offset
+
+    def setSize(self, size):
+        self._size = size
+        self.setText(self.ID_SIZE, hex(size))
+
+    def getSize(self):
+        return self._size
+
+    def setValue(self, value):
+        self._value = value
+        self.setText(self.ID_VALUE, value)
+
+    def getValue(self):
+        return self._value
+
+    def setDescription(self, description):
+        self._description = description
+        self.setText(self.ID_DESCRIPTION, description)
+
+    def getDescription(self):
+        return self._description
+
+
+class QColorButton(QtGui.QPushButton):
+    '''
+    Custom Qt Widget to show a chosen color.
+
+    Left-clicking the button shows the color-chooser, while
+    right-clicking resets the color to None (no-color).    
+    '''
+
+    '''
+    based on http://martinfitzpatrick.name/article/qcolorbutton-a-color-selector-tool-for-pyqt/
+    '''
+    colorChanged = QtCore.pyqtSignal()
+
+    def __init__(self, *args, **kwargs):
+        super(QColorButton, self).__init__(*args, **kwargs)
+
+        self._color = None
+        self.setMaximumWidth(32)
+        self.pressed.connect(self.onColorPicker)
+
+    def setColor(self, color):
+        if color != self._color:
+            self._color = color
+            self.colorChanged.emit()
+
+        if self._color:
+            self.setStyleSheet("background-color: %s;" % self._color)
+        else:
+            self.setStyleSheet("")
+
+    def color(self):
+        return self._color
+
+    def onColorPicker(self):
+        '''
+        Show color-picker dialog to select color.
+
+        Qt will use the native dialog by default.
+
+        '''
+        dlg = QtGui.QColorDialog(QtGui.QColor(self._color), None)
+
+        #if self._color:
+        #    dlg.setCurrentColor(QtGui.QColor(self._color))
+
+        if dlg.exec_():
+            self.setColor(dlg.currentColor().name())
+
+    def mousePressEvent(self, e):
+        if e.button() == QtCore.Qt.RightButton:
+            self.setColor(None)
+
+        return super(QColorButton, self).mousePressEvent(e)
 
 class ComboBoxItem(QtGui.QComboBox):
     def __init__(self, item, column):
@@ -866,11 +1005,10 @@ class Annotation(QtGui.QDialog):
 
 #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
 
-        self.ei = treeEventFilter(self.ui.treeWidget)
+        self.ei = treeEventFilter(view, self.ui.treeWidget)
         self.ui.treeWidget.installEventFilter(self.ei)
 
         self.initUI()
-
 
     def show(self):
 
@@ -894,16 +1032,27 @@ class Annotation(QtGui.QDialog):
         shortcut = QtGui.QShortcut(QtGui.QKeySequence("Shift+/"), self, self.close, self.close)
 
 class treeEventFilter(QtCore.QObject):
-    def __init__(self, widget):
+    def __init__(self, view, widget):
         super(QtCore.QObject, self).__init__()
         self.widget = widget
+        self.view = view
 
     def eventFilter(self, watched, event):
         if event.type() == QtCore.QEvent.KeyPress:
             if event.key() == QtCore.Qt.Key_Delete:
 
                 # get RVA column from treeView
+
                 item = self.widget.currentItem()
+
+                offset = item.getOffset()#int(str(item.text(1)),0)
+                size = item.getSize()#int(str(item.text(2)),0)
+                u = offset
+                v = offset + size
+
+                self.view.selector.removeSelection(u, v, TextSelection.SelectionType.PERMANENT)
+                # TODO: remove tree! 
+                
                 item.parent().removeChild(item)
                 #self.widget.takeTopLevelItem(self.widget.indexOfTopLevelItem(item))
                 #print item
