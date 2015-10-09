@@ -431,7 +431,9 @@ class binWidget(QtGui.QWidget, Observable):
 
             # handle keys to view plugin
             if self.viewMode.handleKeyEvent(modifiers, key, event=event):
+                event.accept()
                 self.update()
+                return True
 
 
         return False
