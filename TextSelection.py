@@ -63,6 +63,22 @@ class Selection(object):
 
         return True
 
+    def removeSelection(self, u, v, type):
+        if type == SelectionType.NORMAL:
+            L = self.selectionStartOffset
+
+        elif type == SelectionType.PERMANENT:
+            L = self.PermanentSelections
+
+        elif type == SelectionType.TEXTHIGHLIGHT:
+            L = self.HighlightSelections
+
+        else:
+            raise "Selection type unknown"
+
+        L[:] = [t for t in L if t[0] != u and t[1] != v]
+        return
+
     def drawSelections(self, qp):
         # draw permanent
         for t in self.PermanentSelections:
@@ -294,7 +310,7 @@ class HexSelection(Selection):
         height = self.viewMode.fontHeight
         width = self.viewMode.fontWidth
 
-        qp.setOpacity(0.4)
+        qp.setOpacity(opacity)
         while mark:
             if d0/cols == d1/cols:
                 # +2 is an offset for letters
