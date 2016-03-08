@@ -1,7 +1,7 @@
 from ViewMode import *
 from cemu import *
 import TextSelection
-from TextDecorators import *   
+from TextDecorators import *
 import string
 import PyQt4
 from PyQt4 import QtGui, QtCore
@@ -79,11 +79,11 @@ class HexViewMode(ViewMode):
                 t[0](*t[1:])
 
         self.Ops = []
-        
+
         if not self.newPix:
             self.draw()
 
-        return self.newPix        
+        return self.newPix
 
     def getGeometry(self):
         return self.COLUMNS, self.ROWS
@@ -166,7 +166,7 @@ class HexViewMode(ViewMode):
         #self.transformationEngine.decorateText()
 
         # highlight selected text
-        self.selector.highlightText()       
+        self.selector.highlightText()
 
         # draw other selections
         self.selector.drawSelections(qp)
@@ -193,7 +193,7 @@ class HexViewMode(ViewMode):
         self.qpix.scroll(dx*self.fontWidth, 0, QtCore.QRect((self.COLUMNS*3 + gap)*self.fontWidth , 0, self.COLUMNS*self.fontWidth, self.ROWS*self.fontHeight + self.SPACER))
 
         qp = QtGui.QPainter()
-        
+
         qp.begin(self.qpix)
         qp.setFont(self.font)
         qp.setPen(self.textPen)
@@ -229,7 +229,7 @@ class HexViewMode(ViewMode):
                 if dx > 0:
                     idx = (i)*(self.COLUMNS) + (column)
 
-                if len(self.getDisplayablePage()) > idx:                
+                if len(self.getDisplayablePage()) > idx:
                     qp.setPen(self.transformationEngine.choosePen(idx))
                 else:
                     break
@@ -258,21 +258,21 @@ class HexViewMode(ViewMode):
         self.qpix.scroll(0, dy*self.fontHeight, self.qpix.rect())
 
         qp = QtGui.QPainter()
-        
+
         qp.begin(self.qpix)
         qp.setFont(self.font)
         qp.setPen(self.textPen)
 
         factor = abs(dy)
-        
+
         cemu = ConsoleEmulator(qp, self.ROWS, self.CON_COLUMNS)
 
         if dy < 0:
-            cemu.gotoXY(0, self.ROWS - factor)            
+            cemu.gotoXY(0, self.ROWS - factor)
             qp.fillRect(0, (self.ROWS-factor)*self.fontHeight, self.fontWidth*self.CON_COLUMNS, factor * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         if dy > 0:
-            cemu.gotoXY(0, 0)            
+            cemu.gotoXY(0, 0)
             qp.fillRect(0, 0, self.fontWidth*self.CON_COLUMNS, factor * self.fontHeight, self.backgroundBrush)
 
 
@@ -303,12 +303,12 @@ class HexViewMode(ViewMode):
 
                 if i == self.COLUMNS - 1:
                     hex_s = str(hex(c)[2:]).zfill(2)
-                else:                
+                else:
                     hex_s = str(hex(c)[2:]).zfill(2) + ' '
 
                 # write hex representation
                 cemu.write(hex_s, noBackgroudOnSpaces=True)
-                
+
                 # save hex position
                 x, y = cemu.getXY()
                 # write text
@@ -338,14 +338,14 @@ class HexViewMode(ViewMode):
         self.drawAdditionals()
 
     def drawTextMode(self, qp, row=0, howMany=1):
-       
+
         # draw background
         qp.fillRect(0, row * self.fontHeight, self.CON_COLUMNS * self.fontWidth,  howMany * self.fontHeight + self.SPACER, self.backgroundBrush)
 
         # set text pen&font
         qp.setFont(self.font)
         qp.setPen(self.textPen)
-        
+
         cemu = ConsoleEmulator(qp, self.ROWS, self.CON_COLUMNS)
 
         page = self.transformationEngine.decorate()
@@ -366,7 +366,7 @@ class HexViewMode(ViewMode):
             if self.transformationEngine.chooseBrush(w) != None:
                 qp.setBackgroundMode(1)
                 qp.setBackground(self.transformationEngine.chooseBrush(w))
-    
+
             # write hex representation
             cemu.write(hex_s, noBackgroudOnSpaces=True)
             # save hex position
@@ -378,7 +378,7 @@ class HexViewMode(ViewMode):
             if (w+1)%self.COLUMNS == 0:
                 cemu.writeLn()
 
-            qp.setBackgroundMode(0)  
+            qp.setBackgroundMode(0)
 
     def moveCursor(self, direction):
         #TODO: have to move this, don't like it
@@ -467,7 +467,7 @@ class HexViewMode(ViewMode):
 
         qp.setOpacity(0.8)
         if self.isInEditMode():
-            qp.setOpacity(0.5)            
+            qp.setOpacity(0.5)
         # cursor on text
         qp.drawRect((self.COLUMNS*3 + self.gap + cursorX)*self.fontWidth, cursorY*self.fontHeight+2, self.fontWidth, self.fontHeight)
 
@@ -522,7 +522,7 @@ class HexViewMode(ViewMode):
         self.draw()
 
     def handleEditMode(self, modifiers, key, event):
-             
+
         if str(event.text()).lower() in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']:
 
             offs = self.getCursorOffsetInPage()
@@ -530,7 +530,7 @@ class HexViewMode(ViewMode):
             b = self.dataModel.getBYTE(self.dataModel.getOffset() + offs)
             if b is None:
                 return
-                
+
             z = int(str(event.text()), 16)
 
             # compute nibble
@@ -560,11 +560,11 @@ class HexViewMode(ViewMode):
                 self.dataModel.setData_b(self.dataModel.getOffset() + offs, chr(b))
 
             if block:
-                self.transformationEngine = RangePen(self.original_textdecorator, u, v, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True) 
+                self.transformationEngine = RangePen(self.original_textdecorator, u, v, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True)
             else:
                 z = self.dataModel.getOffset() + offs
                 #TODO: sa nu se repete, tre original_transformengine
-                self.transformationEngine = RangePen(self.original_textdecorator, z, z + 0, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True) 
+                self.transformationEngine = RangePen(self.original_textdecorator, z, z + 0, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True)
 
             # se if we are at end of row, we must also redraw previous line
             highpart = self.highpart
@@ -575,7 +575,7 @@ class HexViewMode(ViewMode):
 
                 if self.highpart == False:
                     self.moveCursor(Directions.Right)
-            
+
                 x, y = self.cursor.getPosition()
 
             if highpart:
@@ -653,15 +653,15 @@ class HexViewMode(ViewMode):
                 if key == QtCore.Qt.Key_Right:
                     self.moveCursor(Directions.Right)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_Down:
                     self.moveCursor(Directions.Down)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_End:
                     self.moveCursor(Directions.End)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_Home:
                     self.moveCursor(Directions.Home)
                     self.addop((self.draw,))
@@ -669,10 +669,10 @@ class HexViewMode(ViewMode):
                 if key == QtCore.Qt.Key_Up:
                     self.moveCursor(Directions.Up)
                     self.addop((self.draw,))
-                    
+
                 if key == QtCore.Qt.Key_PageDown:
                     self.addop((self.scrollPages, 1))
-        
+
                 if key == QtCore.Qt.Key_PageUp:
                     self.addop((self.scrollPages, -1))
 
@@ -739,7 +739,7 @@ class HexViewMode(ViewMode):
     def selectionChanged(self, selected, deselected):
 
          item = self.ann_w.treeWidget.currentItem()
-       
+
          if item:
             offset = item.getOffset()
             size = item.getSize()
@@ -756,7 +756,7 @@ class HexViewMode(ViewMode):
 
 
         s = unicode(item.text(column))
-        
+
         if column == ID_NAME:
             item.setName(s)
 
@@ -815,7 +815,8 @@ class HexViewMode(ViewMode):
         t.setItemDelegateForColumn(3, delegate)
         t.setItemDelegateForColumn(5, delegate)
 
-        row.setName('field_0')
+
+        row.setName(self.ann_w.newFieldName())
         row.setOffset(u)
         #row.setText(ID_NAME, 'field_0')
         #row.setText(ID_OFFSET, hex(u))
@@ -934,7 +935,7 @@ class QColorButton(QtGui.QPushButton):
     Custom Qt Widget to show a chosen color.
 
     Left-clicking the button shows the color-chooser, while
-    right-clicking resets the color to None (no-color).    
+    right-clicking resets the color to None (no-color).
     '''
 
     '''
@@ -991,10 +992,11 @@ class ComboBoxItem(QtGui.QComboBox):
         self.column = column
 
 class Annotation(QtGui.QDialog):
-    
+
+    _fieldIdx = 0
     def __init__(self, parent, view):
         super(Annotation, self).__init__(parent)
-        
+
         self.parent = parent
         self.view = view
         self.oshow = super(Annotation, self).show
@@ -1010,6 +1012,11 @@ class Annotation(QtGui.QDialog):
 
         self.initUI()
 
+    def newFieldName(self):
+        name = 'field_{}'.format(self._fieldIdx)
+        self._fieldIdx += 1
+        return name
+        
     def show(self):
 
         # TODO: remember position? resize plugin windows when parent resize?
@@ -1024,7 +1031,7 @@ class Annotation(QtGui.QDialog):
 
         self.oshow()
 
-    def initUI(self):      
+    def initUI(self):
 
         self.setWindowTitle('Annotations')
         self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
@@ -1051,12 +1058,11 @@ class treeEventFilter(QtCore.QObject):
                 v = offset + size
 
                 self.view.selector.removeSelection(u, v, TextSelection.SelectionType.PERMANENT)
-                # TODO: remove tree! 
-                
+                # TODO: remove tree!
+
                 item.parent().removeChild(item)
                 #self.widget.takeTopLevelItem(self.widget.indexOfTopLevelItem(item))
                 #print item
                 #rva = self.widget.indexFromItem(item, 1).data().toString()
 
         return False
-
