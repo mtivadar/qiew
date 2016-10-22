@@ -1,0 +1,9 @@
+[Core]
+Name = base64
+Module = encoder_base64
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = base64 encoder
