@@ -1,0 +1,9 @@
+[Core]
+Name = fs_ntfs
+Module = ntfs
+
+[Documentation]
+Author = Marius TIVADAR
+Version = 0.1
+Website = 
+Description = basic ntfs
