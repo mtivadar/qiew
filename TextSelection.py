@@ -9,6 +9,7 @@ class SelectionType:
     NORMAL = 0
     PERMANENT = 1
     TEXTHIGHLIGHT = 2
+    IF_CURSOR_IN_RANGE = 3
 
 class Selection(object):
     def __init__(self, viewMode):
@@ -16,6 +17,8 @@ class Selection(object):
         self.selecting = False
         self.Selections = []
         self.PermanentSelections = []
+        self.ConditionalSelections = []
+
         self.MAX_SELECTIONS = 1
         self.defaultBrush = QtGui.QBrush(QtGui.QColor(125, 255, 0))
 
@@ -61,6 +64,9 @@ class Selection(object):
         if type == SelectionType.TEXTHIGHLIGHT:
             self.HighlightSelections.append(t)
 
+        if type == SelectionType.IF_CURSOR_IN_RANGE:
+            self.ConditionalSelections.append(t)
+
         return True
 
     def removeSelection(self, u, v, type):
@@ -73,6 +79,9 @@ class Selection(object):
         elif type == SelectionType.TEXTHIGHLIGHT:
             L = self.HighlightSelections
 
+        elif type == SelectionType.IF_CURSOR_IN_RANGE:
+            L = self.ConditionalSelections
+
         else:
             raise "Selection type unknown"
 
@@ -84,6 +93,13 @@ class Selection(object):
         for t in self.PermanentSelections:
             start, end, b, o = t
             self.drawSelection(qp, start, end, brush=b, opacity=o)
+
+        # draw conditional
+        for t in self.ConditionalSelections:
+            start, end, b, o = t
+            position = self.viewMode.getCursorAbsolutePosition() + 1
+            if position >= start and position <= end:
+                self.drawSelection(qp, start, end, brush=b, opacity=o)
 
         # draw already selected
         for t in self.Selections:
