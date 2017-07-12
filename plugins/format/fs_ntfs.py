@@ -82,7 +82,7 @@ class AttrDef(object):
         if t in self._Index:
             return self._Index[t]
         else:
-            raise NtfsError('Attribute type 0x{:0x} not found in $AttrDef.')
+            raise NtfsError('Attribute type 0x{:0x} not found in $AttrDef.'.format(t))
 
     def getAttributes(self):
         return self._Attrs
@@ -565,6 +565,7 @@ class Attribute_INDEX_ROOT(Attribute_TYPES):
         self.entries = []
 
         off = ofs + 16 + 16
+        self.root_nodes = []
 
         if attribute.std_header.name == '$I30':
             # we support only this kind of index
@@ -960,7 +961,8 @@ class MFT(object):
         magic = data.getStream(fr + 0x00, fr + 0x04)
      
         if magic != "FILE":
-            log.debug('magic does not mach "FILE", instead: 0x{:x}'.format(magic))
+            log.debug('magic does not mach "FILE", instead: {}.'.format(magic))
+            return None
             #raise NtfsError('magic should mach "FILE", offset 0x{:x}'.format(fr))
 
 
