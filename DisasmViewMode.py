@@ -166,7 +166,7 @@ class ASMLine(object):
         # compute index table
 
         # add hex bytes as tokens
-        H = self.hex.split(' ')
+        H = self.hex.split(b' ')
         for i, h in enumerate(H):
             self._indexTable += [(i*3, len(h), h)]
 
@@ -267,7 +267,7 @@ class ASMLine(object):
 
     def hexlify(self, sb):
         hexstr = binascii.hexlify(sb)
-        hexstr = ' '.join([hexstr[i:i+2] for i in range(0, len(hexstr), 2)])
+        hexstr = b' '.join([hexstr[i:i+2] for i in range(0, len(hexstr), 2)])
         return hexstr
 
     @property
@@ -525,7 +525,7 @@ class DisasmViewMode(ViewMode):
         asm = self.OPCODES[y]
 
         if x < len(asm.hex):
-            postY = x/3
+            postY = x//3
         else:
             postY = asm.size
 
@@ -594,7 +594,7 @@ class DisasmViewMode(ViewMode):
             tsize = sum([o.size for o in self.OPCODES])
             msize = sum([o.size for o in self.OPCODES[:cursorY]])
 
-            half = self.fontHeight/2
+            half = self.fontHeight//2
 
             # branch address
             target = asm.branchAddress()
@@ -615,9 +615,9 @@ class DisasmViewMode(ViewMode):
 
                 # draw the three lines
 
-                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight//2, -30, cursorY*self.fontHeight + half)
 
-                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (i + 1)*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight//2, -30, (i + 1)*self.fontHeight + half)
 
                 qp.drawLine(-30, (i + 1)*self.fontHeight + half, -15, (i + 1)*self.fontHeight + half)
 
@@ -637,8 +637,8 @@ class DisasmViewMode(ViewMode):
                 qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
 
                 # draw the two lines
-                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
-                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (self.ROWS - 2)*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight//2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight//2, -30, (self.ROWS - 2)*self.fontHeight + half)
 
                 # draw arrow
                 points = [QtCore.QPoint(-25, (self.ROWS - 2)*self.fontHeight + half), 
@@ -655,8 +655,8 @@ class DisasmViewMode(ViewMode):
                 qp.setPen(QtGui.QPen(QtGui.QColor(0, 192, 0), 1, QtCore.Qt.DotLine))
 
                 # draw the two lines
-                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight/2, -30, cursorY*self.fontHeight + half)
-                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight/2, -30, (1)*self.fontHeight + half)
+                qp.drawLine(-5, cursorY*self.fontHeight + self.fontHeight//2, -30, cursorY*self.fontHeight + half)
+                qp.drawLine(-30, cursorY*self.fontHeight + self.fontHeight//2, -30, (1)*self.fontHeight + half)
 
                 # draw arrow
                 points = [QtCore.QPoint(-25, (1)*self.fontHeight + half), 
@@ -770,8 +770,8 @@ class DisasmViewMode(ViewMode):
                     groups = []
 
                 d = D()
-                d.mnemonic = 'db ' + '0x{:02x}'.format(bytearray(code[offset])[0])
-                d.bytes = code[offset]
+                d.mnemonic = 'db ' + '0x{:02x}'.format(code[offset])
+                d.bytes = bytes([code[offset]])
 
                 d.address = self._getVA(ofs) + offset
 
@@ -865,7 +865,7 @@ class DisasmViewMode(ViewMode):
         cemu = ConsoleEmulator(qp, self.ROWS, self.COLUMNS)
 
         if len(self.OPCODES) == 0:
-            self.OPCODES = self._getOpcodes(self.dataModel.getOffset(), str(self.getDisplayablePage()), self.plugin.hintDisasm(), count=self.ROWS)
+            self.OPCODES = self._getOpcodes(self.dataModel.getOffset(), self.getDisplayablePage(), self.plugin.hintDisasm(), count=self.ROWS)
 
 
         for i in range(self.ROWS):
@@ -912,7 +912,7 @@ class DisasmViewMode(ViewMode):
         else:
             # else, move page
             self.dataModel.goTo(offset)
-            self.OPCODES = self._getOpcodes(offset, str(self.getDisplayablePage()), self.plugin.hintDisasm(), count=self.ROWS)
+            self.OPCODES = self._getOpcodes(offset, self.getDisplayablePage(), self.plugin.hintDisasm(), count=self.ROWS)
             self.cursor.moveAbsolute(0, 0)
             self.draw(refresh=True)
 
@@ -927,7 +927,7 @@ class DisasmViewMode(ViewMode):
         self.scroll(0, -number*self.ROWS, cachePix=cachePix, pageOffset=pageOffset)
 
     def _disassamble_one(self, start, end, count=1):
-        code = str(self.dataModel.getStream(start, end))
+        code = self.dataModel.getStream(start, end)
         Disasm = self._getOpcodes(start, code, 0, count)
         return Disasm
 
@@ -1020,7 +1020,7 @@ class DisasmViewMode(ViewMode):
 
         if len(RowsToDraw) < abs(dy):
             # maybe we couldn't draw dy rows (possible we reached the beginning of the data to early), recalculate dy
-            dy = len(RowsToDraw)*dy/abs(dy)
+            dy = len(RowsToDraw)*dy//abs(dy)
             factor = abs(dy)
 
         if not cachePix:

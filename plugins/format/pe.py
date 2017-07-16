@@ -144,11 +144,11 @@ class PE(FileFormat):
             return ''
 
         doit = True
-        s = ''
+        s = bytearray()
         data = self.dataModel
 
         import string
-        Special =  string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
+        Special = (string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_').encode('cp437')
         while doit:
             c = data.getChar(offset)
 
@@ -156,7 +156,7 @@ class PE(FileFormat):
                 break
 
             if c in Special:
-                s += c
+                s.append(c)
                 offset += 1
 
                 c1 = data.getChar(offset)
@@ -169,7 +169,7 @@ class PE(FileFormat):
             else:
                 doit = False
 
-        return s
+        return s.decode('cp437')
 
     def disasmVAtoFA(self, va):
         try:
