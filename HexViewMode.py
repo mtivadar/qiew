@@ -109,8 +109,8 @@ class HexViewMode(ViewMode):
 
     def computeTextArea(self):
         self.COLUMNS = self.HexColumns[self.idxHexColumns]
-        self.CON_COLUMNS = self.width/self.fontWidth
-        self.ROWS = self.height/self.fontHeight
+        self.CON_COLUMNS = self.width//self.fontWidth
+        self.ROWS = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def resize(self, width, height):

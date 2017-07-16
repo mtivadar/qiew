@@ -748,14 +748,14 @@ class Example(QtGui.QWidget):
 #        self.c.updateBW[int].connect(self.wid.setValue)
 
 #        sld.valueChanged[int].connect(self.changeValue)
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.wid)
 #        vbox = QtGui.QVBoxLayout()
 #        vbox.addStretch(1)
 #        vbox.addLayout(hbox)
         self.setLayout(hbox)
 
-        screen = QtGui.QDesktopWidget().screenGeometry()        
+        screen = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(0, 0, screen.width(), screen.height())
 #        self.setGeometry(100, 300, 1424, 310)
         self.setWindowTitle('Burning widget')

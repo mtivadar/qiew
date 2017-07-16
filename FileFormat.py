@@ -93,9 +93,9 @@ class DialogGoto(QtWidgets.QDialog):
 
         self.ui.setWindowTitle('GoTo')
 
-        QtCore.QObject.connect(self.ui.lineEdit, QtCore.SIGNAL('returnPressed()'), self.onReturnPressed)
+        #ADF: QtCore.QObject.connect(self.ui.lineEdit, QtCore.SIGNAL('returnPressed()'), self.onReturnPressed)
 
-
+    @QtCore.pyqtSlot(name = "returnPressed")
     def onReturnPressed(self):
 
         expr = str(self.ui.lineEdit.text())

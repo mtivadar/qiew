@@ -19,6 +19,7 @@ class DataModel(Observer):
     
     @dataOffset.setter
     def dataOffset(self, value):
+        assert type(value) == int
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -32,10 +33,12 @@ class DataModel(Observer):
         return False
 
     def slide(self, off):
+        assert isinstance(off, int)
         if self.inLimits(self.dataOffset + off):
             self.dataOffset += off
 
     def goTo(self, off):
+        assert isinstance(off, int)
         if self.inLimits(off):
             self.dataOffset = off
 
@@ -65,8 +68,9 @@ class DataModel(Observer):
         self.dataOffset = 0
 
     def getXYInPage(self, off):
+        assert isinstance(off, int)
         off -= self.dataOffset
-        x, y = off/self.cols, off%self.cols
+        x, y = off//self.cols, off%self.cols
         return x, y
 
     def getPageOffset(self, page):

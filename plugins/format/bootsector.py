@@ -292,7 +292,7 @@ class BootHeaderBanner(Banners.TopBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         displayType = self.plugin.getAddressMode()
 

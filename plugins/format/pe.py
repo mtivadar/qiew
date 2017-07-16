@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, logging
 from FileFormat import *
 import Banners
 import pefile
@@ -11,6 +11,8 @@ from cemu import *
 import time
 
 import DisasmViewMode
+
+logger = logging.getLogger(__name__)
 
 class PE(FileFormat):
     name = 'pe'
@@ -290,10 +292,8 @@ class PE(FileFormat):
                     parent.topLevelItem(0).addChild(child)
 
             except Exception as e:
-                print(e)
+                logger.error(e, exc_info=1)
 
-        
-        
         # add imports
         parent = w.ui.treeWidgetImports
         parent.setColumnWidth(0, 300) 
@@ -301,24 +301,24 @@ class PE(FileFormat):
             for i, entry in enumerate(self.PE.DIRECTORY_ENTRY_IMPORT):
                 
                 child = QtWidgets.QTreeWidgetItem(None)
-                child.setText(0, entry.dll)
+                child.setText(0, entry.dll.decode('cp437'))
                 parent.addTopLevelItem(child)
 
                 for imp in entry.imports:
                     child = QtWidgets.QTreeWidgetItem(None)
                     if imp.name:
-                        child.setText(0, imp.name)
+                        child.setText(0, imp.name.decode('cp437'))
                         child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
                         parent.topLevelItem(i).addChild(child)
 
                     if imp.ordinal:
-                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal))
+                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal.decode('cp437')))
                         child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
                         parent.topLevelItem(i).addChild(child)
         except Exception as e:
-            print(e)
+            logger.error(e, exc_info=1)
 
         # populate with sections
         parent = w.ui.treeWidgetSections
@@ -1188,7 +1188,7 @@ class PEBottomBanner(Banners.BottomBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if dword is None:
@@ -1383,7 +1383,7 @@ class PEBanner(Banners.Banner):
 
             section = self.PE.get_section_by_offset(offset)
             if section:
-                s = section.Name.replace('\0', ' ')
+                s = section.Name.replace(b'\0', b' ')
 
             displayType = self.peplugin.getAddressMode()
             if displayType == 'FA':

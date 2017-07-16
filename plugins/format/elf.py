@@ -154,7 +154,7 @@ class ELFHeaderBanner(Banners.TopBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         cemu.writeAt(1, 0, 'Name')
 

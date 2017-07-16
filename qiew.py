@@ -87,10 +87,10 @@ class Searchable(Observer):
             return -1
 
         if not previous:
-            idx1 = string.find(data, text, start)
-            text1 = '\0'.join(text)
+            idx1 = data.find(text, start)
+            text1 = text.decode('utf-8').encode('utf-16')
 
-            idx2 = string.find(data, text1, start)
+            idx2 = data.find(text1, start)
 
             idx = idx1
             if idx1 == -1:
@@ -100,10 +100,10 @@ class Searchable(Observer):
                     idx = idx2
 
         else:
-            idx1 = string.rfind(data, text, 0, start)
-            text1 = '\0'.join(text)
+            idx1 = data.rfind(text, 0, start)
+            text1 = text.decode('utf-8').encode('utf-16')
 
-            idx2 = string.rfind(data, text1, 0, start)
+            idx2 = data.rfind(text1, 0, start)
 
             idx = idx1
 
@@ -725,7 +725,7 @@ class SearchWindow(QtWidgets.QDialog):
 
         shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("/"), self, self.close, self.close)
 
-        QtCore.QObject.connect(self.ui.pushButton, QtCore.SIGNAL('clicked()'), self.onClicked)
+        self.ui.pushButton.clicked.connect(lambda x: self.onClicked())
 
         width = self.ui.size().width()+15
         height = self.ui.size().height()+15
@@ -766,7 +766,7 @@ class SearchWindow(QtWidgets.QDialog):
 
         idx = self.searchable.search(text)
         if idx == -1:
-            reply = QtWidgets.QTreeWidgetItem.warning(self, 'Qiew', "Nothing found.", QtWidgets.QTreeWidgetItem.Ok)
+            reply = QtWidgets.QMessageBox.warning(self, 'Qiew', "Nothing found.", QtWidgets.QMessageBox.Ok)
 
         self.parent.viewMode.draw(refresh=True)
         self.close()
@@ -804,11 +804,11 @@ class Qiew(QtWidgets.QWidget):
 
         self.wid = binWidget(self, self._source)
         
-        self.hbox = QtGui.QHBoxLayout()
+        self.hbox = QtWidgets.QHBoxLayout()
         self.hbox.addWidget(self.wid)
         self.setLayout(self.hbox)
 
-        screen = QtGui.QDesktopWidget().screenGeometry()        
+        screen = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(0, 0, screen.width()-100, screen.height()-100)
 
         self.setWindowTitle(self._title)

@@ -296,8 +296,8 @@ class BinViewMode(ViewMode):
         self.transformationEngine = engine
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width//self.fontWidth
+        self.ROWS    = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):
@@ -662,8 +662,8 @@ class HexViewMode(ViewMode):
 
     def computeTextArea(self):
         self.COLUMNS = 32
-        self.CON_COLUMNS = self.width/self.fontWidth
-        self.ROWS = self.height/self.fontHeight
+        self.CON_COLUMNS = self.width//self.fontWidth
+        self.ROWS = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def resize(self, width, height):
@@ -1427,7 +1427,7 @@ class BottomBanner():
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         sd = 'DWORD: {0}'.format(dword)
@@ -1740,11 +1740,11 @@ class Example(QtGui.QWidget):
 
         self.wid = binWidget(mapped)
         
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.wid)
         self.setLayout(hbox)
 
-        screen = QtGui.QDesktopWidget().screenGeometry()        
+        screen = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(0, 0, screen.width()-100, screen.height()-100)
         #self.setGeometry(100, 300, 1424, 310)
         self.setWindowTitle('binhex widget')

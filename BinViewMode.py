@@ -88,8 +88,8 @@ class BinViewMode(ViewMode):
         self.original_textdecorator = engine
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width//self.fontWidth
+        self.ROWS    = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):

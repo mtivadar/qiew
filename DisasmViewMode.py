@@ -479,8 +479,8 @@ class DisasmViewMode(ViewMode):
         self.refresh = True
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width//self.fontWidth
+        self.ROWS    = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def getPixmap(self):
