@@ -1383,7 +1383,7 @@ class PEBanner(Banners.Banner):
 
             section = self.PE.get_section_by_offset(offset)
             if section:
-                s = section.Name.replace(b'\0', b' ')
+                s = section.Name.replace(b'\0', b' ').decode('cp437')
 
             displayType = self.peplugin.getAddressMode()
             if displayType == 'FA':
