@@ -93,9 +93,8 @@ class DialogGoto(QtWidgets.QDialog):
 
         self.ui.setWindowTitle('GoTo')
 
-        #ADF: QtCore.QObject.connect(self.ui.lineEdit, QtCore.SIGNAL('returnPressed()'), self.onReturnPressed)
+        self.ui.lineEdit.returnPressed.connect(lambda: self.onReturnPressed())
 
-    @QtCore.pyqtSlot(name = "returnPressed")
     def onReturnPressed(self):
 
         expr = str(self.ui.lineEdit.text())
@@ -105,7 +104,7 @@ class DialogGoto(QtWidgets.QDialog):
         import operator as op
         # supported operators
         operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
-                     ast.Div: op.div, ast.Pow: op.pow, ast.USub: op.neg}
+                     ast.Div: op.floordiv, ast.Pow: op.pow, ast.USub: op.neg}
 
         def eval_expr(expr):
             return eval_(ast.parse(expr, mode='eval').body)

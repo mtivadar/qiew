@@ -492,7 +492,8 @@ class WUnpack(QtWidgets.QDialog):
         self.ui.listWidget.currentItemChanged.connect(self.item_clicked)
         self.ui.listWidget.setCurrentRow(0)
 
-        self.ui.connect(self.ui.proceed, PyQt5.QtCore.SIGNAL("clicked()"), self.handleProceed)
+        #self.ui.connect(self.ui.proceed, PyQt5.QtCore.SIGNAL("clicked()"), self.handleProceed)
+        self.ui.proceed.clicked.connect(lambda: self.handleProceed())
 
         self.initUI()
 
@@ -588,7 +589,8 @@ class WHeaders(QtWidgets.QDialog):
 
         self.ui.rsel.setChecked(True)
         self.ui.rbin.setChecked(True)
-        QtCore.QObject.connect(self.ui.ok, QtCore.SIGNAL('clicked()'), self.onClicked)
+        #QtCore.QObject.connect(self.ui.ok, QtCore.SIGNAL('clicked()'), self.onClicked)
+        self.ui.ok.clicked.connect(lambda: self.onClicked())
 
     def onClicked(self):
         

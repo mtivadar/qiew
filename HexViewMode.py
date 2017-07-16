@@ -765,8 +765,11 @@ class HexViewMode(ViewMode):
 
 
     def add_annotation(self, mode):
-        QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.selectionChanged)
-        QtCore.QObject.connect(self.ann_w.treeWidget, QtCore.SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.itemChanged)
+        #FIXME: check if this connect call is the correct way in PyQt5
+        # QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.selectionChanged)
+        self.ann_w.treeWidget.selectionModel().selectionChanged.connect(lambda selected, deselected: self.selectionChanged(selected, deselected))
+        # QtCore.QObject.connect(self.ann_w.treeWidget, QtCore.SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.itemChanged)
+        self.ann_w.treeWidget.itemChanged.connect(lambda item, column: self.itemChanged(item, column))
 
 
         ID_NAME = 0
@@ -807,7 +810,7 @@ class HexViewMode(ViewMode):
 
         t.setAcceptDrops(True)
         t.setDragEnabled(True)
-        t.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        t.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
         delegate = NoEditDelegate()
         t.setItemDelegateForColumn(1, delegate)
