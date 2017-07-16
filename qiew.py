@@ -743,7 +743,7 @@ class SearchWindow(QtWidgets.QDialog):
             text = ''
             for t in T:
                 if len(t) != 2:
-                    reply = QtWidgets.QTreeWidgetItem.warning(self, 'Qiew', "Hex string with errors.", QtWidgets.QTreeWidgetItem.Ok)
+                    reply = QtWidgets.QMessageBox.warning(self, 'Qiew', "Hex string with errors.", QtWidgets.QMessageBox.Ok)
                     self.close()
                     return
 
@@ -751,7 +751,7 @@ class SearchWindow(QtWidgets.QDialog):
                     o = int(t, 16)
                     text += chr(o)
                 else:
-                    reply = QtWidgets.QTreeWidgetItem.warning(self, 'Qiew', "Hex string with errors.", QtWidgets.QTreeWidgetItem.Ok)
+                    reply = QtWidgets.QMessageBox.warning(self, 'Qiew', "Hex string with errors.", QtWidgets.QMessageBox.Ok)
                     self.close()
                     return
 

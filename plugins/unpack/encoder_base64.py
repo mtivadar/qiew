@@ -38,18 +38,18 @@ class EncoderBase64(UnpackPlugin.DecryptPlugin):
                 try:
                     encoded = base64.b64decode(stream)
                 except TypeError:
-                    reply = QtWidgets.QTreeWidgetItem.warning(self.viewMode.widget, 'Qiew', "Error decoding...", QtWidgets.QTreeWidgetItem.Ok)
+                    reply = QtWidgets.QMessageBox.warning(self.viewMode.widget, 'Qiew', "Error decoding...", QtWidgets.QMessageBox.Ok)
                     return False
 
             elif op == 'encode':
                 try:
                     encoded = base64.b64encode(stream)
                 except TypeError:
-                    reply = QtWidgets.QTreeWidgetItem.warning(self.viewMode.widget, 'Qiew', "Error encoding...", QtWidgets.QTreeWidgetItem.Ok)
+                    reply = QtWidgets.QMessageBox.warning(self.viewMode.widget, 'Qiew', "Error encoding...", QtWidgets.QMessageBox.Ok)
                     return False
 
             name = self.dataModel.source
             open(name + '.base64', 'w').write(encoded)
-            reply = QtWidgets.QTreeWidgetItem.information(self.viewMode.widget, 'Qiew', "Done.", QtWidgets.QTreeWidgetItem.Ok)
+            reply = QtWidgets.QMessageBox.information(self.viewMode.widget, 'Qiew', "Done.", QtWidgets.QMessageBox.Ok)
 
         return True
