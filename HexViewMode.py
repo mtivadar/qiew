@@ -175,7 +175,7 @@ class HexViewMode(ViewMode):
         self.drawCursor(qp)
 
         # draw dword lines
-        for i in range(self.COLUMNS/4)[1:]:
+        for i in range(self.COLUMNS//4)[1:]:
             xw = i*4*3*self.fontWidth - 4
             qp.setPen(QtGui.QColor(0, 255, 0))
             qp.drawLine(xw, 0, xw, self.ROWS*self.fontHeight)
