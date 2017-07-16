@@ -7,8 +7,8 @@ date: 02/2013
 """
 
 import sys
-from StringIO import *
-from PyQt4 import QtGui, QtCore, uic
+from io import *
+from PyQt5 import QtGui, QtCore, QtWidgets, uic
 import mmap
 import binascii
 import string
@@ -128,10 +128,10 @@ class Searchable(Observer):
         return self._search(data, text, 0)
 
 
-class binWidget(QtGui.QWidget, Observable):
+class binWidget(QtWidgets.QWidget, Observable):
   
     scrolled = QtCore.pyqtSignal(int, name='scroll')
-    oldscrolled = QtCore.SIGNAL('scroll')
+    # oldscrolled = QtWidgets.SIGNAL('scroll')
 
     def __init__(self, parent, source):
         super(binWidget, self).__init__()
@@ -165,14 +165,14 @@ class binWidget(QtGui.QWidget, Observable):
             # plugin.plugin_object is an instance of the plugin
             po = plugin.plugin_object
             if po.recognize(self.dataModel):
-                print '[+] ' + po.name
+                print('[+] ' + po.name)
                 Formats.append(po)
                 
 
         # sort plugins by priority
         Formats = sorted(Formats, key=lambda x: x.priority, reverse=True)
         po = Formats[0]
-        print 'Choosed plugin: ' + po.name
+        print('Choosed plugin: ' + po.name)
 
         #print QtGui.QFontDatabase.addApplicationFont(os.path.join('terminus-ttf-4.39', 'TerminusTTF-4.39.ttf'))
         
@@ -450,7 +450,7 @@ class binWidget(QtGui.QWidget, Observable):
 
 
 
-class WUnpack(QtGui.QDialog):
+class WUnpack(QtWidgets.QDialog):
     
     def __init__(self, parent, plugin):
         super(WUnpack, self).__init__(parent)
@@ -461,7 +461,7 @@ class WUnpack(QtGui.QDialog):
 
         root = os.path.dirname(sys.argv[0])
 
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'unpack.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'unpack.ui'), baseinstance=self)
 
 
         self.ui.setWindowTitle('Decrypt/Encrypt')
@@ -485,14 +485,14 @@ class WUnpack(QtGui.QDialog):
             if po.init(self.parent.dataModel, self.parent.viewMode):
                 self.Plugins[plugin.name] = po
                 #self.ui.horizontalLayout.addWidget(po.getUI())
-                print '[+] ' + plugin.name
+                print('[+] ' + plugin.name)
                 self.ui.listWidget.addItem(plugin.name)
                 #Formats.append(po)
 
         self.ui.listWidget.currentItemChanged.connect(self.item_clicked)
         self.ui.listWidget.setCurrentRow(0)
 
-        self.ui.connect(self.ui.proceed, PyQt4.QtCore.SIGNAL("clicked()"), self.handleProceed)
+        self.ui.connect(self.ui.proceed, PyQt5.QtCore.SIGNAL("clicked()"), self.handleProceed)
 
         self.initUI()
 
@@ -538,9 +538,9 @@ class WUnpack(QtGui.QDialog):
 
     def initUI(self):      
 
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F4"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F4"), self, self.close, self.close)
         #QtCore.QObject.connect(self.ui.ok, QtCore.SIGNAL('clicked()'), self.onClicked)
 
     def onClicked(self):
@@ -550,7 +550,7 @@ class WUnpack(QtGui.QDialog):
 
 
 
-class WHeaders(QtGui.QDialog):
+class WHeaders(QtWidgets.QDialog):
     
     def __init__(self, parent, plugin):
         super(WHeaders, self).__init__(parent)
@@ -561,7 +561,7 @@ class WHeaders(QtGui.QDialog):
 
         root = os.path.dirname(sys.argv[0])
 
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'dropper.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'dropper.ui'), baseinstance=self)
         self.ui.setWindowTitle('Dropper')
 
         self.initUI()
@@ -582,9 +582,9 @@ class WHeaders(QtGui.QDialog):
 
     def initUI(self):      
 
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("F10"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("F10"), self, self.close, self.close)
 
         self.ui.rsel.setChecked(True)
         self.ui.rbin.setChecked(True)
@@ -607,7 +607,7 @@ class WHeaders(QtGui.QDialog):
             a,b = 0, dataModel.getDataSize()
 
         if a == None:
-            print 'no-selection'
+            print('no-selection')
             self.close()
             return
 
@@ -651,7 +651,7 @@ class WHeaders(QtGui.QDialog):
                 # try to make an PE instance
                 try:
                     pe = pefile.PE(data=str(dataModel.getStream(mz, size)))
-                except pefile.PEFormatError, e:
+                except pefile.PEFormatError as e:
                     continue
 
 
@@ -663,7 +663,7 @@ class WHeaders(QtGui.QDialog):
                 # drop if < selected/file size
                 if mz + raw < size:
                     open(name + ".drop.{0}.mzpe".format(i), 'wb').write(dataModel.getStream(mz, mz + pe.OPTIONAL_HEADER.SizeOfHeaders + raw))
-                    print 'dropped from {0} to {1}'.format(hex(mz), hex(mz+raw))
+                    print('dropped from {0} to {1}'.format(hex(mz), hex(mz+raw)))
                     i += 1
 
                 """
@@ -691,7 +691,7 @@ class WHeaders(QtGui.QDialog):
 
 
 
-class SearchWindow(QtGui.QDialog):
+class SearchWindow(QtWidgets.QDialog):
     
     def __init__(self, parent, plugin, searchable):
         super(SearchWindow, self).__init__(parent)
@@ -702,7 +702,7 @@ class SearchWindow(QtGui.QDialog):
 
         root = os.path.dirname(sys.argv[0])
 
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'search.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'search.ui'), baseinstance=self)
         self.ui.setWindowTitle('Search')
         self._lastText = ''
 
@@ -721,9 +721,9 @@ class SearchWindow(QtGui.QDialog):
 
     def initUI(self):
 
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("/"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("/"), self, self.close, self.close)
 
         QtCore.QObject.connect(self.ui.pushButton, QtCore.SIGNAL('clicked()'), self.onClicked)
 
@@ -734,7 +734,7 @@ class SearchWindow(QtGui.QDialog):
 
     def onClicked(self):
         text = self.ui.lineEdit.text()  
-        text = unicode(text)
+        text = str(text)
 
         hexstr = '0123456789abcdefABCDEF'
         if self.ui.checkHex.isChecked():
@@ -743,7 +743,7 @@ class SearchWindow(QtGui.QDialog):
             text = ''
             for t in T:
                 if len(t) != 2:
-                    reply = QtGui.QMessageBox.warning(self, 'Qiew', "Hex string with errors.", QtGui.QMessageBox.Ok)
+                    reply = QtWidgets.QTreeWidgetItem.warning(self, 'Qiew', "Hex string with errors.", QtWidgets.QTreeWidgetItem.Ok)
                     self.close()
                     return
 
@@ -751,7 +751,7 @@ class SearchWindow(QtGui.QDialog):
                     o = int(t, 16)
                     text += chr(o)
                 else:
-                    reply = QtGui.QMessageBox.warning(self, 'Qiew', "Hex string with errors.", QtGui.QMessageBox.Ok)
+                    reply = QtWidgets.QTreeWidgetItem.warning(self, 'Qiew', "Hex string with errors.", QtWidgets.QTreeWidgetItem.Ok)
                     self.close()
                     return
 
@@ -766,12 +766,12 @@ class SearchWindow(QtGui.QDialog):
 
         idx = self.searchable.search(text)
         if idx == -1:
-            reply = QtGui.QMessageBox.warning(self, 'Qiew', "Nothing found.", QtGui.QMessageBox.Ok)
+            reply = QtWidgets.QTreeWidgetItem.warning(self, 'Qiew', "Nothing found.", QtWidgets.QTreeWidgetItem.Ok)
 
         self.parent.viewMode.draw(refresh=True)
         self.close()
 
-class Qiew(QtGui.QWidget):
+class Qiew(QtWidgets.QWidget):
     
     def __init__(self, source, title):
         super(Qiew, self).__init__()
@@ -788,14 +788,14 @@ class Qiew(QtGui.QWidget):
             return
 
         quit_msg = "Do you want to save the changes?"
-        reply = QtGui.QMessageBox.question(self, 'Qiew', 
-                         quit_msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No, QtGui.QMessageBox.Cancel)
+        reply = QtWidgets.QTreeWidgetItem.question(self, 'Qiew',
+                         quit_msg, QtWidgets.QTreeWidgetItem.Yes, QtWidgets.QTreeWidgetItem.No, QtWidgets.QTreeWidgetItem.Cancel)
 
-        if reply == QtGui.QMessageBox.Yes:
+        if reply == QtWidgets.QTreeWidgetItem.Yes:
             if self.wid.save() == False:
-                print 'File not saved!'
+                print('File not saved!')
             event.accept()
-        elif reply == QtGui.QMessageBox.No:
+        elif reply == QtWidgets.QTreeWidgetItem.No:
             event.accept()
         else:
             event.ignore()
@@ -823,10 +823,10 @@ class Qiew(QtGui.QWidget):
 
 def main():
     if len(sys.argv) <= 1:
-        print 'usage: qiew.py <file>'
+        print('usage: qiew.py <file>')
         sys.exit()
 
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
 
     filename = sys.argv[1]
     source = FileDataModel(filename)

@@ -23,14 +23,14 @@ If you have a C compiler run
 ```
 pip install -r requirements.txt
 ``` 
-and install [PyQt4](http://www.riverbankcomputing.com/software/pyqt/download).
 
 Otherwise run
 ```
-pip install yapsy pefile pyperclip pyaes ply pyelftools androguard
+pip install yapsy pefile pyperclip pyaes ply pyelftools androguard PyQt5
 ```
-and manually install [**Capstone**](http://www.capstone-engine.org/documentation.html) and [**PyQt4**](http://www.riverbankcomputing.com/software/pyqt/download).
+and manually install [**Capstone**](http://www.capstone-engine.org/documentation.html).
 
+If you develop in a virtualenv on Windows, you need to copy the python3.dll to your virtual env, as only python36.dll is copied automatically.
 
 ## Available plugins
   * **PE**

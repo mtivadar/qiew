@@ -2,8 +2,8 @@ from FileFormat import *
 import Banners
 import pefile
 from TextDecorators import *
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 from cemu import *
 
 import sys, os
@@ -19,7 +19,7 @@ class ELF(FileFormat):
         self.dataModel = dataModel
         try:
             self.elf = ELFFile(self.dataModel.getData())
-        except Exception, e:
+        except Exception as e:
             return False
 
         return True
@@ -69,15 +69,15 @@ class ELF(FileFormat):
     def registerShortcuts(self, parent):
         self._parent = parent
         self.w = DialogGoto(parent, self)
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
 
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)]
 
     def F7(self):
         offset = self.elf.header['e_entry']
-        print self.elf.header['e_phoff']
+        print(self.elf.header['e_phoff'])
         self._viewMode.goTo(offset)
 
     def _showit(self):

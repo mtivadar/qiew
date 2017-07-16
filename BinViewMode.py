@@ -3,8 +3,8 @@ from cemu import *
 import TextSelection
 from TextDecorators import *    
 
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 from time import time 
 import sys
 import threading

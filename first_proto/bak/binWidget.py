@@ -7,8 +7,8 @@ date: 02/2013
 """
 
 import sys
-from StringIO import *
-from PyQt4 import QtGui, QtCore
+from io import *
+from PyQt5 import QtGui, QtCore, QtWidgets
 import string
 import mmap
 
@@ -150,7 +150,7 @@ class ViewMode(Observable):
         0x00b0, 0x2219, 0x00b7, 0x221a, 0x207f, 0x00b2, 0x25a0, 0x00a0]
 
     def cp437(self, c):
-        return unichr(self.cp437ToUnicode[c])
+        return chr(self.cp437ToUnicode[c])
 
 class BinViewMode(ViewMode):
     def __init__(self, width, height, data):
@@ -813,7 +813,7 @@ class TextTransformation:
             if i+1 < len(page):
                 if page[i+1] == 0 and self.isText(chr(page[i])):
                     k = 0
-                    for j in xrange(i, len(page), 2):
+                    for j in range(i, len(page), 2):
                         if j < len(page):
                             if self.isText(chr(page[j])) and page[j+1] == 0:
                                 k += 1

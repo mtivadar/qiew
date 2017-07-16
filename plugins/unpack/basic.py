@@ -1,8 +1,8 @@
 import UnpackPlugin
-from PyQt4.QtGui import *
+from PyQt5.QtGui import *
 
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 import sys, os
 
 
@@ -14,7 +14,7 @@ class basic(UnpackPlugin.DecryptPlugin):
         super(basic, self).init(dataModel, viewMode)
 
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'basic.ui'))
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'basic.ui'))
 
         self.ui.key.textChanged.connect(self._keychanged)
         self.ui.key.setValidator(UnpackPlugin.MyValidator(self.ui.key))

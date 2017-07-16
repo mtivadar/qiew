@@ -1,7 +1,7 @@
 import UnpackPlugin
 from TextDecorators import *
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 import sys, os
 
 import base64
@@ -12,7 +12,7 @@ class EncoderBase64(UnpackPlugin.DecryptPlugin):
     def init(self, dataModel, viewMode):
         super(EncoderBase64, self).init(dataModel, viewMode)
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'encoder_base64.ui'))
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'encoder_base64.ui'))
 
         self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
         return True
@@ -38,18 +38,18 @@ class EncoderBase64(UnpackPlugin.DecryptPlugin):
                 try:
                     encoded = base64.b64decode(stream)
                 except TypeError:
-                    reply = QtGui.QMessageBox.warning(self.viewMode.widget, 'Qiew', "Error decoding...", QtGui.QMessageBox.Ok)
+                    reply = QtWidgets.QTreeWidgetItem.warning(self.viewMode.widget, 'Qiew', "Error decoding...", QtWidgets.QTreeWidgetItem.Ok)
                     return False
 
             elif op == 'encode':
                 try:
                     encoded = base64.b64encode(stream)
                 except TypeError:
-                    reply = QtGui.QMessageBox.warning(self.viewMode.widget, 'Qiew', "Error encoding...", QtGui.QMessageBox.Ok)
+                    reply = QtWidgets.QTreeWidgetItem.warning(self.viewMode.widget, 'Qiew', "Error encoding...", QtWidgets.QTreeWidgetItem.Ok)
                     return False
 
             name = self.dataModel.source
             open(name + '.base64', 'w').write(encoded)
-            reply = QtGui.QMessageBox.information(self.viewMode.widget, 'Qiew', "Done.", QtGui.QMessageBox.Ok)
+            reply = QtWidgets.QTreeWidgetItem.information(self.viewMode.widget, 'Qiew', "Done.", QtWidgets.QTreeWidgetItem.Ok)
 
         return True

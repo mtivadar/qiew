@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import re
 import string
 from time import time

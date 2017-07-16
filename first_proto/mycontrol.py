@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-ZetCode PyQt4 tutorial 
+ZetCode PyQt5 tutorial
 
 In this example, we create a custom widget.
 
@@ -12,8 +12,8 @@ last edited: October 2011
 """
 
 import sys
-from StringIO import *
-from PyQt4 import QtGui, QtCore
+from io import *
+from PyQt5 import QtGui, QtCore, QtWidgets
 import string
 
 cp437ToUnicode = [0x0000, 0x0001, 0x0002, 0x0003, 0x0004, 0x0005, 0x0006, 0x0007,
@@ -76,7 +76,7 @@ class BurningWidget(QtGui.QWidget):
     def getStream(self, data):
         self.stream = ''
         for a in data[self.read_pos:self.read_pos + self.MAX_DISPLAYED_CHARS]:
-            self.stream += unichr(cp437ToUnicode[ord(a)])
+            self.stream += chr(cp437ToUnicode[ord(a)])
 
     def isText(self, c):
         Special = string.ascii_letters + string.digits + ' .';

@@ -6,3 +6,4 @@ capstone
 ply
 pyelftools
 androguard
+PyQt5
