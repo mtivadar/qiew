@@ -133,7 +133,7 @@ class basic(UnpackPlugin.DecryptPlugin):
                 while j < size:
                     c = b & 0xFF
                     #self.dataModel.setData_b(offset + size - 1 - j, chr(c))
-                    self.dataModel.setData_b(offset +  j, chr(c))
+                    self.dataModel.setData_b(offset +  j, c)
                     b = b >> 8
                     j += 1
 

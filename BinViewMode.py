@@ -507,7 +507,7 @@ class BinViewMode(ViewMode):
         if key in range(0, 256):
             offs = self.getCursorOffsetInPage()
 
-            self.dataModel.setData_b(self.dataModel.getOffset() + offs, str(event.text()))
+            self.dataModel.setData_b(self.dataModel.getOffset() + offs, event.text().encode('cp437')[0])
 
             z = self.dataModel.getOffset() + offs                
             #TODO: sa nu se repete, tre original_transformengine
