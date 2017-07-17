@@ -764,7 +764,8 @@ class PE(FileFormat):
 
     def jump_overlay(self):
         overlay = self.PE.get_overlay_data_start_offset()
-        self._viewMode.goTo(overlay)
+        if overlay:
+            self._viewMode.goTo(overlay)
 
     def skip_section_up(self):
         # cursor pozition in datamodel
@@ -1262,7 +1263,7 @@ class PEBottomBanner(Banners.BottomBanner):
 
         start = self.plugin.PE.get_overlay_data_start_offset()
 
-        if start > 0:
+        if start:
             qp.setPen(self.gray)
             overlay = 'overlay: {0:,} bytes'.format(start)
 
