@@ -744,12 +744,12 @@ class DisasmViewMode(ViewMode):
         
         cnt = 0
         offset = 0
-        #self.OPCODES = []
         OPCODES = []
 
         # how ugly ... don't like capstone on this one..
         while cnt < count and offset < len(code):
-            Disasm = md.disasm(code[offset:], self._getVA(ofs) + offset, count=count)
+            buffer = bytes(code[offset:])
+            Disasm = md.disasm(buffer, self._getVA(ofs) + offset, count=count)
 
             # disasamble as much as we can
             for d in Disasm:
