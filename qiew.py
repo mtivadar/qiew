@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
@@ -620,7 +620,7 @@ class WHeaders(QtWidgets.QDialog):
             L = ['{0:02X}'.format(o) for o in dataModel.getStream(a, b)]
 
             l = len(L)
-            for i in range(l/20 + 1):
+            for i in range(l//20 + 1):
                 L.insert((i+0)*20 + i, '\n')
             
             open(name + '.drop' + '.hex', 'wb').write(' '.join(L))
@@ -716,7 +716,7 @@ class SearchWindow(QtWidgets.QDialog):
         width = self.ui.size().width()+15
         height = self.ui.size().height()+15
 
-        self.move((self.parent.width() -  width)/ 2, (self.parent.height() -  height)/ 2)
+        self.move((self.parent.width() -  width)// 2, (self.parent.height() -  height)// 2)
         self.ui.lineEdit.setText(self._lastText)
         self.ui.lineEdit.selectAll()
         self.oshow()
