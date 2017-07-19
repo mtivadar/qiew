@@ -238,11 +238,11 @@ class DefaultSelection(Selection):
 
         qp.setOpacity(0.4)
         while mark:
-            if d0/cols == d1/cols:
-                qp.fillRect((d0%cols)*8, (d0/cols)*height, (d1-d0)*8, 1*height, brush)
+            if d0//cols == d1//cols:
+                qp.fillRect((d0%cols)*8, (d0//cols)*height, (d1-d0)*8, 1*height, brush)
                 d0 += (d1 - d0)
             else:    
-                qp.fillRect((d0%cols)*8, (d0/cols)*height, (cols - d0%cols)*8, 1*height, brush)
+                qp.fillRect((d0%cols)*8, (d0//cols)*height, (cols - d0%cols)*8, 1*height, brush)
                 d0 += (cols - d0%cols)
 
             if (d1 - d0 <= 0):
@@ -281,11 +281,11 @@ class DefaultSelection(Selection):
         offset = 2
 
         while mark:
-            if d0/cols == d1/cols:
-                qp.fillRect((d0%cols)*width, (d0/cols)*height + offset, (d1-d0)*width, 1*height, brush)
+            if d0//cols == d1//cols:
+                qp.fillRect((d0%cols)*width, (d0//cols)*height + offset, (d1-d0)*width, 1*height, brush)
                 d0 += (d1 - d0)
             else:    
-                qp.fillRect((d0%cols)*width, (d0/cols)*height + offset, (cols - d0%cols)*width, 1*height, brush)
+                qp.fillRect((d0%cols)*width, (d0//cols)*height + offset, (cols - d0%cols)*width, 1*height, brush)
                 d0 += (cols - d0%cols)
 
             if (d1 - d0 <= 0):
@@ -328,15 +328,15 @@ class HexSelection(Selection):
 
         qp.setOpacity(opacity)
         while mark:
-            if d0/cols == d1/cols:
+            if d0//cols == d1//cols:
                 # +2 is an offset for letters
-                qp.fillRect(3*(d0%cols)*width,                    (d0/cols)*height+2, 3*(d1-d0)*width - width, 1*height, brush)
-                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0/cols)*height+2, (d1-d0)*width,           1*height, brush)
+                qp.fillRect(3*(d0%cols)*width,                    (d0//cols)*height+2, 3*(d1-d0)*width - width, 1*height, brush)
+                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0//cols)*height+2, (d1-d0)*width,           1*height, brush)
 
                 d0 += (d1 - d0)
             else:    
-                qp.fillRect(3*(d0%cols)*width,                    (d0/cols)*height+2, 3*(cols - d0%cols)*width - width, 1*height, brush)
-                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0/cols)*height+2, (cols - d0%cols)*width,       1*height, brush)
+                qp.fillRect(3*(d0%cols)*width,                    (d0//cols)*height+2, 3*(cols - d0%cols)*width - width, 1*height, brush)
+                qp.fillRect(3*cols*width + self.viewMode.gap*width + (d0%cols)*width, (d0//cols)*height+2, (cols - d0%cols)*width,       1*height, brush)
 
                 d0 += (cols - d0%cols)
 
