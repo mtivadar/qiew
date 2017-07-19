@@ -1,7 +1,7 @@
 import UnpackPlugin
 from TextDecorators import *
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 import sys, os
 
 
@@ -12,7 +12,7 @@ class rc4(UnpackPlugin.DecryptPlugin):
         super(rc4, self).init(dataModel, viewMode)
 		#root = os.path.dirname(sys.argv[0])
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'rc4.ui'))
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'rc4.ui'))
 
         self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
         return True
@@ -35,7 +35,7 @@ class rc4(UnpackPlugin.DecryptPlugin):
     # based on Thimo Kraemer <thimo.kraemer@joonis.de> code
     def rc4decrypt(self, data, key):
 		x = 0
-		box = range(256)
+		box = list(range(256))
 		for i in range(256):
 			x = (x + box[i] + ord(key[i % len(key)])) % 256
 			box[i], box[x] = box[x], box[i]

@@ -3,8 +3,8 @@ from cemu import *
 import TextSelection
 from TextDecorators import *    
 
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 from time import time 
 import sys
 import threading
@@ -88,8 +88,8 @@ class BinViewMode(ViewMode):
         self.original_textdecorator = engine
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width//self.fontWidth
+        self.ROWS    = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):

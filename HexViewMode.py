@@ -3,8 +3,8 @@ from cemu import *
 import TextSelection
 from TextDecorators import *
 import string
-import PyQt4
-from PyQt4 import QtGui, QtCore
+import PyQt5
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 class HexViewMode(ViewMode):
     def __init__(self, width, height, data, cursor, widget=None, plugin=None):
@@ -109,8 +109,8 @@ class HexViewMode(ViewMode):
 
     def computeTextArea(self):
         self.COLUMNS = self.HexColumns[self.idxHexColumns]
-        self.CON_COLUMNS = self.width/self.fontWidth
-        self.ROWS = self.height/self.fontHeight
+        self.CON_COLUMNS = self.width//self.fontWidth
+        self.ROWS = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def resize(self, width, height):
@@ -175,7 +175,7 @@ class HexViewMode(ViewMode):
         self.drawCursor(qp)
 
         # draw dword lines
-        for i in range(self.COLUMNS/4)[1:]:
+        for i in range(self.COLUMNS//4)[1:]:
             xw = i*4*3*self.fontWidth - 4
             qp.setPen(QtGui.QColor(0, 255, 0))
             qp.drawLine(xw, 0, xw, self.ROWS*self.fontHeight)
@@ -755,7 +755,7 @@ class HexViewMode(ViewMode):
         ID_DESCRIPTION = 4
 
 
-        s = unicode(item.text(column))
+        s = str(item.text(column))
 
         if column == ID_NAME:
             item.setName(s)
@@ -765,8 +765,11 @@ class HexViewMode(ViewMode):
 
 
     def add_annotation(self, mode):
-        QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.selectionChanged)
-        QtCore.QObject.connect(self.ann_w.treeWidget, QtCore.SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.itemChanged)
+        #FIXME: check if this connect call is the correct way in PyQt5
+        # QtCore.QObject.connect(self.ann_w.treeWidget.selectionModel(), QtCore.SIGNAL('selectionChanged(QItemSelection, QItemSelection)'), self.selectionChanged)
+        self.ann_w.treeWidget.selectionModel().selectionChanged.connect(lambda selected, deselected: self.selectionChanged(selected, deselected))
+        # QtCore.QObject.connect(self.ann_w.treeWidget, QtCore.SIGNAL('itemChanged(QTreeWidgetItem*, int)'), self.itemChanged)
+        self.ann_w.treeWidget.itemChanged.connect(lambda item, column: self.itemChanged(item, column))
 
 
         ID_NAME = 0
@@ -807,7 +810,7 @@ class HexViewMode(ViewMode):
 
         t.setAcceptDrops(True)
         t.setDragEnabled(True)
-        t.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        t.setDragDropMode(QtWidgets.QAbstractItemView.InternalMove)
 
         delegate = NoEditDelegate()
         t.setItemDelegateForColumn(1, delegate)
@@ -866,14 +869,14 @@ class HexViewMode(ViewMode):
         #self.ann_w.treeWidget.editItem(row, 0)
         #self.ann_w.treeWidget.editItem(row, 3)
 
-class NoEditDelegate(QtGui.QStyledItemDelegate):
+class NoEditDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent=None):
         super(NoEditDelegate, self).__init__(parent)
 
     def createEditor(self, parent, option, index):
         return None
 
-class AnnonItem(QtGui.QTreeWidgetItem):
+class AnnonItem(QtWidgets.QTreeWidgetItem):
     ID_NAME = 0
     ID_OFFSET = 1
     ID_SIZE = 2
@@ -930,7 +933,7 @@ class AnnonItem(QtGui.QTreeWidgetItem):
         return self._description
 
 
-class QColorButton(QtGui.QPushButton):
+class QColorButton(QtWidgets.QPushButton):
     '''
     Custom Qt Widget to show a chosen color.
 
@@ -984,14 +987,14 @@ class QColorButton(QtGui.QPushButton):
 
         return super(QColorButton, self).mousePressEvent(e)
 
-class ComboBoxItem(QtGui.QComboBox):
+class ComboBoxItem(QtWidgets.QComboBox):
     def __init__(self, item, column):
         super(ComboBoxItem, self).__init__()
 
         self.item = item
         self.column = column
 
-class Annotation(QtGui.QDialog):
+class Annotation(QtWidgets.QDialog):
 
     _fieldIdx = 0
     def __init__(self, parent, view):
@@ -1003,7 +1006,7 @@ class Annotation(QtGui.QDialog):
 
         import os
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'annotation.ui'), baseinstance=self)
 
 #        self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
 
@@ -1034,9 +1037,9 @@ class Annotation(QtGui.QDialog):
     def initUI(self):
 
         self.setWindowTitle('Annotations')
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Shift+/"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Shift+/"), self, self.close, self.close)
 
 class treeEventFilter(QtCore.QObject):
     def __init__(self, view, widget):

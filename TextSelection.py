@@ -3,7 +3,7 @@
 #
 #
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 class SelectionType:
     NORMAL = 0

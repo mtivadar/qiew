@@ -4,8 +4,8 @@ from FileFormat import *
 import Banners
 import pefile
 from TextDecorators import *
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 
 from cemu import *
 
@@ -97,7 +97,7 @@ class Bootsector(FileFormat):
             if b == '0x80':
                 active = i
 
-            item = QtGui.QTableWidgetItem(b)
+            item = QtWidgets.QTableWidgetItem(b)
             item.setTextAlignment(QtCore.Qt.AlignRight)
             if active and i == active:
                 item.setTextColor(QtGui.QColor('green'))
@@ -110,7 +110,7 @@ class Bootsector(FileFormat):
             if int(b, 16) in Types:
                 b = Types[int(b,16)]
 
-            item = QtGui.QTableWidgetItem(b)
+            item = QtWidgets.QTableWidgetItem(b)
             item.setTextAlignment(QtCore.Qt.AlignRight)
             if active and i == active:
                 item.setTextColor(QtGui.QColor('green'))
@@ -121,7 +121,7 @@ class Bootsector(FileFormat):
         for i in range(4):
             b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 1) & 0x00FFFFFF)
 
-            item = QtGui.QTableWidgetItem(b)
+            item = QtWidgets.QTableWidgetItem(b)
             item.setTextAlignment(QtCore.Qt.AlignRight)
             if active and i == active:
                 item.setTextColor(QtGui.QColor('green'))
@@ -132,7 +132,7 @@ class Bootsector(FileFormat):
         for i in range(4):
             b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 5) & 0x00FFFFFF)
 
-            item = QtGui.QTableWidgetItem(b)
+            item = QtWidgets.QTableWidgetItem(b)
             item.setTextAlignment(QtCore.Qt.AlignRight)
             if active and i == active:
                 item.setTextColor(QtGui.QColor('green'))
@@ -143,7 +143,7 @@ class Bootsector(FileFormat):
         for i in range(4):
             b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 8))
 
-            item = QtGui.QTableWidgetItem(b)
+            item = QtWidgets.QTableWidgetItem(b)
             item.setTextAlignment(QtCore.Qt.AlignRight)
             if active and i == active:
                 item.setTextColor(QtGui.QColor('green'))
@@ -154,7 +154,7 @@ class Bootsector(FileFormat):
         for i in range(4):
             b = '0x{0}'.format(self.dataModel.getDWORD(446 + i*16 + 0xC))
 
-            item = QtGui.QTableWidgetItem(b)
+            item = QtWidgets.QTableWidgetItem(b)
             item.setTextAlignment(QtCore.Qt.AlignRight)
             if active and i == active:
                 item.setTextColor(QtGui.QColor('green'))
@@ -214,13 +214,13 @@ class Bootsector(FileFormat):
         self._parent = parent
         self.w = WHeaders(parent, self)
         self._writeData(self.w)
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), parent, self._showit, self._showit)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Alt+P"), parent, self._showit, self._showit)
 
         self.g = MyDialogGoto(parent, self)
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
 
 
 
@@ -244,7 +244,7 @@ class MyDialogGoto(DialogGoto):
 
         return offset - 0x7c00
 
-class WHeaders(QtGui.QDialog):
+class WHeaders(QtWidgets.QDialog):
     
     def __init__(self, parent, plugin):
         super(WHeaders, self).__init__(parent)
@@ -254,7 +254,7 @@ class WHeaders(QtGui.QDialog):
         self.oshow = super(WHeaders, self).show
 
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'format', 'bootsector.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'format', 'bootsector.ui'), baseinstance=self)
 
         self.initUI()
 
@@ -274,9 +274,9 @@ class WHeaders(QtGui.QDialog):
 
     def initUI(self):      
 
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Alt+P"), self, self.close, self.close)
 
 
 class BootHeaderBanner(Banners.TopBanner):
@@ -292,7 +292,7 @@ class BootHeaderBanner(Banners.TopBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         displayType = self.plugin.getAddressMode()
 

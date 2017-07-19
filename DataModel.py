@@ -5,7 +5,7 @@ class Observer:
     def update_geometry(self):
         NotImplementedError('method not implemented.')
 
-class DataModel(object, Observer):
+class DataModel(Observer):
     def __init__(self, data):
         self._dataOffset = 0
         self.rows = self.cols = 0
@@ -19,6 +19,7 @@ class DataModel(object, Observer):
     
     @dataOffset.setter
     def dataOffset(self, value):
+        assert type(value) == int
         self._lastOffset = self._dataOffset
         self._dataOffset = value
 
@@ -32,10 +33,12 @@ class DataModel(object, Observer):
         return False
 
     def slide(self, off):
+        assert isinstance(off, int)
         if self.inLimits(self.dataOffset + off):
             self.dataOffset += off
 
     def goTo(self, off):
+        assert isinstance(off, int)
         if self.inLimits(off):
             self.dataOffset = off
 
@@ -65,8 +68,9 @@ class DataModel(object, Observer):
         self.dataOffset = 0
 
     def getXYInPage(self, off):
+        assert isinstance(off, int)
         off -= self.dataOffset
-        x, y = off/self.cols, off%self.cols
+        x, y = off//self.cols, off%self.cols
         return x, y
 
     def getPageOffset(self, page):
@@ -206,7 +210,7 @@ class FileDataModel(DataModel):
         # open for writing
         try:
             self._f = open(self._filename, "r+b")
-        except Exception, e:
+        except Exception as e:
             # could not open for writing
             return False
         self._f.write(self._mapped)
@@ -227,8 +231,8 @@ class FileDataModel(DataModel):
 def f():
     return 5
 
-import StringIO
-class MyStringIO(StringIO.StringIO, object):
+import io
+class MyStringIO(io.StringIO, object):
     def __init__(self, data):
         self.raw = data
         super(MyStringIO, self).__init__(data)

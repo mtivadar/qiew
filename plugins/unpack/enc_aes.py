@@ -1,7 +1,7 @@
 import UnpackPlugin
 from TextDecorators import *
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 import sys, os
 
 import pyaes
@@ -14,7 +14,7 @@ class aes(UnpackPlugin.DecryptPlugin):
         super(aes, self).init(dataModel, viewMode)
 
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'aes.ui'))
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'aes.ui'))
 
         self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
         self.ui.op_iv.activated[QtCore.QString].connect(self._itemchanged_iv)

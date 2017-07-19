@@ -7,8 +7,8 @@ date: 02/2013
 """
 
 import sys
-from StringIO import *
-from PyQt4 import QtGui, QtCore
+from io import *
+from PyQt5 import QtGui, QtCore, QtWidgets
 import string
 import mmap
 
@@ -150,7 +150,7 @@ class ViewMode(Observable):
         0x00b0, 0x2219, 0x00b7, 0x221a, 0x207f, 0x00b2, 0x25a0, 0x00a0]
 
     def cp437(self, c):
-        return unichr(self.cp437ToUnicode[c])
+        return chr(self.cp437ToUnicode[c])
 
 class BinViewMode(ViewMode):
     def __init__(self, width, height, data):
@@ -189,8 +189,8 @@ class BinViewMode(ViewMode):
         self.transformationEngine = engine
 
     def computeTextArea(self):
-        self.COLUMNS = self.width/self.fontWidth
-        self.ROWS    = self.height/self.fontHeight
+        self.COLUMNS = self.width//self.fontWidth
+        self.ROWS    = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def drawAdditionals(self):
@@ -467,8 +467,8 @@ class HexViewMode(ViewMode):
 
     def computeTextArea(self):
         self.COLUMNS = 32
-        self.CON_COLUMNS = self.width/self.fontWidth
-        self.ROWS = self.height/self.fontHeight
+        self.CON_COLUMNS = self.width//self.fontWidth
+        self.ROWS = self.height//self.fontHeight
         self.notify(self.ROWS, self.COLUMNS)
 
     def resize(self, width, height):
@@ -813,7 +813,7 @@ class TextTransformation:
             if i+1 < len(page):
                 if page[i+1] == 0 and self.isText(chr(page[i])):
                     k = 0
-                    for j in xrange(i, len(page), 2):
+                    for j in range(i, len(page), 2):
                         if j < len(page):
                             if self.isText(chr(page[j])) and page[j+1] == 0:
                                 k += 1
@@ -1086,11 +1086,11 @@ class Example(QtGui.QWidget):
 
         self.wid = binWidget(mapped)
         
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.wid)
         self.setLayout(hbox)
 
-        screen = QtGui.QDesktopWidget().screenGeometry()        
+        screen = QtWidgets.QDesktopWidget().screenGeometry()
         self.setGeometry(0, 0, screen.width()-100, screen.height()-100)
         #self.setGeometry(100, 300, 1424, 310)
         self.setWindowTitle('binhex widget')

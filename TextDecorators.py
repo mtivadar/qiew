@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import re
 import string
 from time import time
@@ -172,7 +172,7 @@ class HighlightASCII(PageDecorator):
 
         off = self.dataModel.getOffset()
 
-        Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? _<>]){4,}', page)]
+        Match = [(m.start(), m.end()) for m in re.finditer(rb'([a-zA-Z0-9\-\\.%*:/? _<>]){4,}', page)]
         for s, e in Match:
             for i in range(e-s):
                 idx = off + s + i
@@ -220,7 +220,7 @@ class HighlightPrefix(PageDecorator):
         idx = 0
         if lenText > 0:
             while idx < len(page):
-                idx = page.find(text, idx, len(page))
+                idx = page.find(text.encode('utf-8'), idx, len(page))
 
                 if idx == -1:
                     break
@@ -272,7 +272,7 @@ class HighlightWideChar(PageDecorator):
 
         if not touched:
             # expand
-            Match = [(m.start(), m.end()) for m in re.finditer(r'([a-zA-Z0-9\-\\.%*:/? ]\x00){4,}', page)]
+            Match = [(m.start(), m.end()) for m in re.finditer(rb'([a-zA-Z0-9\-\\.%*:/? ]\x00){4,}', page)]
             for s, e in Match:
                 for i in range(e-s):
                     #print i
@@ -284,7 +284,7 @@ class HighlightWideChar(PageDecorator):
                 # copy string that has no zeros
                 page[s:s + l] = string
                 # fill with zeros the remaining space
-                page[s + l: s + 2*l] = '\x00'*l
+                page[s + l: s + 2*l] = b'\x00'*l
 
 
         return page

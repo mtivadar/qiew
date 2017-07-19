@@ -6,8 +6,8 @@ import TextSelection
 
 import DataModel
 
-import PyQt4
-from PyQt4 import QtGui, QtCore
+import PyQt5
+from PyQt5 import QtGui, QtCore, QtWidgets
 from cemu import *
 import time
 
@@ -64,13 +64,13 @@ class APK(FileFormat):
 
     def _add_ep_entity(self, text, acts):
         top = self.w.ui.ep
-        child  = QtGui.QTreeWidgetItem(None)
+        child  = QtWidgets.QTreeWidgetItem(None)
         child.setText(0, text)
         top.setColumnWidth(0, 100)
 
         top.addTopLevelItem(child)
         for act in acts:
-            child1  = QtGui.QTreeWidgetItem(None)
+            child1  = QtWidgets.QTreeWidgetItem(None)
             child1.setText(0, act)
             child1.setTextColor(0, QtGui.QColor('purple'))
             child.addChild(child1)
@@ -89,13 +89,13 @@ class APK(FileFormat):
 
 
         top = self.w.ui.files
-        child  = QtGui.QTreeWidgetItem(None)
+        child  = QtWidgets.QTreeWidgetItem(None)
         child.setText(0, 'Files')
         top.setColumnWidth(0, 100)
 
         top.addTopLevelItem(child)
         for f in self.apk.get_files():
-            child1  = QtGui.QTreeWidgetItem(None)
+            child1  = QtWidgets.QTreeWidgetItem(None)
             child1.setText(0, f)
             child1.setTextColor(0, QtGui.QColor('purple'))
             child.addChild(child1)
@@ -160,14 +160,14 @@ class APK(FileFormat):
             self.g.hide()
 
     def registerShortcuts(self, parent):
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+P"), parent, self.showPermissions, self.showPermissions)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.showEntrypoints, self.showEntrypoints)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+F"), parent, self.showFiles, self.showFiles)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+P"), parent, self.showPermissions, self.showPermissions)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.showEntrypoints, self.showEntrypoints)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+F"), parent, self.showFiles, self.showFiles)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._g_showit, self._g_showit)]
         
         return
 
-class WHeaders(QtGui.QDialog):
+class WHeaders(QtWidgets.QDialog):
     
     def __init__(self, parent, plugin):
         super(WHeaders, self).__init__(parent)
@@ -177,7 +177,7 @@ class WHeaders(QtGui.QDialog):
         self.oshow = super(WHeaders, self).show
 
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'format','apk.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'format','apk.ui'), baseinstance=self)
         self.initUI()
 
     def show(self):
@@ -197,9 +197,9 @@ class WHeaders(QtGui.QDialog):
     def initUI(self):      
 
         self.setWindowTitle('APK plugin')
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+F"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Alt+F"), self, self.close, self.close)
 
 class TabWidEventFilter(QtCore.QObject):
     def __init__(self, plugin):
@@ -217,7 +217,7 @@ class TabWidEventFilter(QtCore.QObject):
 
                 #filename = 'AndroidManifest.xml'
                 #self.plugin.
-                print 'Loading ' + filename
+                print('Loading ' + filename)
                 zip_file = zipfile.ZipFile(self.plugin.dataModel.source)
                 newfile = zip_file.open(filename)
                 source = DataModel.BufferDataModel(newfile.read(), filename)
@@ -247,7 +247,7 @@ class APKBottomBanner(Banners.BottomBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if dword is None:

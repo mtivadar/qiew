@@ -1,16 +1,18 @@
-import sys, os
+import sys, os, logging
 from FileFormat import *
 import Banners
 import pefile
 from TextDecorators import *
 import TextSelection
 
-import PyQt4
-from PyQt4 import QtGui, QtCore
+import PyQt5
+from PyQt5 import QtGui, QtCore, QtWidgets
 from cemu import *
 import time
 
 import DisasmViewMode
+
+logger = logging.getLogger(__name__)
 
 class PE(FileFormat):
     name = 'pe'
@@ -142,11 +144,11 @@ class PE(FileFormat):
             return ''
 
         doit = True
-        s = ''
+        s = bytearray()
         data = self.dataModel
 
         import string
-        Special =  string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_'
+        Special = (string.ascii_letters + string.digits + ' .;\':;=\"?-!()/\\_').encode('cp437')
         while doit:
             c = data.getChar(offset)
 
@@ -154,7 +156,7 @@ class PE(FileFormat):
                 break
 
             if c in Special:
-                s += c
+                s.append(c)
                 offset += 1
 
                 c1 = data.getChar(offset)
@@ -167,7 +169,7 @@ class PE(FileFormat):
             else:
                 doit = False
 
-        return s
+        return s.decode('cp437')
 
     def disasmVAtoFA(self, va):
         try:
@@ -193,7 +195,7 @@ class PE(FileFormat):
                     if imp.ordinal:
                         name = imp.ordinal
 
-                    return '{0}:{1}'.format(entry.dll, name)
+                    return '{0}:{1}'.format(entry.dll.decode('cp437'), name.decode('cp437'))
 
         return None
 
@@ -214,25 +216,25 @@ class PE(FileFormat):
                             #print entry
                             w.ui.tableWidget_2.setColumnWidth(0, 300)                        
                             if entry == 'CompanyName':
-                                w.ui.tableWidget_2.setItem(0, 0, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 0, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
                             if entry == 'FileDescription':
-                                w.ui.tableWidget_2.setItem(0, 1, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 1, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
                             if entry == 'FileVersion':
-                                w.ui.tableWidget_2.setItem(0, 2, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 2, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
                             if entry == 'LegalCopyright':
-                                w.ui.tableWidget_2.setItem(0, 3, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 3, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
                             if entry == 'OriginalFilename':
-                                w.ui.tableWidget_2.setItem(0, 4, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 4, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
                             if entry == 'ProductName':
-                                w.ui.tableWidget_2.setItem(0, 5, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 5, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
                             if entry == 'ProductVersion':
-                                w.ui.tableWidget_2.setItem(0, 6, QtGui.QTableWidgetItem(st.entries[entry]))
+                                w.ui.tableWidget_2.setItem(0, 6, QtWidgets.QTableWidgetItem(st.entries[entry]))
 
 
 
@@ -246,8 +248,8 @@ class PE(FileFormat):
         else:
             petype = 'n/a'
 
-        w.ui.tableWidget.setItem(0, 0, QtGui.QTableWidgetItem(petype))
-        w.ui.tableWidget.setItem(1, 0, QtGui.QTableWidgetItem('{:,} bytes'.format(self.dataModel.getDataSize())))
+        w.ui.tableWidget.setItem(0, 0, QtWidgets.QTableWidgetItem(petype))
+        w.ui.tableWidget.setItem(1, 0, QtWidgets.QTableWidgetItem('{:,} bytes'.format(self.dataModel.getDataSize())))
 
         # add exports
         parent = w.ui.treeWidgetExports
@@ -269,7 +271,7 @@ class PE(FileFormat):
                     k += 1
 
 
-                child = QtGui.QTreeWidgetItem(None)
+                child = QtWidgets.QTreeWidgetItem(None)
                 child.setText(0, s)
 
                 parent.addTopLevelItem(child)
@@ -277,7 +279,7 @@ class PE(FileFormat):
                 
                 for i, exp in enumerate(self.PE.DIRECTORY_ENTRY_EXPORT.symbols):
 
-                    child = QtGui.QTreeWidgetItem(None)
+                    child = QtWidgets.QTreeWidgetItem(None)
 
                     if exp.name:
                         child.setText(0, exp.name)
@@ -289,36 +291,34 @@ class PE(FileFormat):
                     
                     parent.topLevelItem(0).addChild(child)
 
-            except Exception, e:
-                print e
+            except Exception as e:
+                logger.error(e, exc_info=1)
 
-        
-        
         # add imports
         parent = w.ui.treeWidgetImports
         parent.setColumnWidth(0, 300) 
         try:
             for i, entry in enumerate(self.PE.DIRECTORY_ENTRY_IMPORT):
                 
-                child = QtGui.QTreeWidgetItem(None)
-                child.setText(0, entry.dll)
+                child = QtWidgets.QTreeWidgetItem(None)
+                child.setText(0, entry.dll.decode('cp437'))
                 parent.addTopLevelItem(child)
 
                 for imp in entry.imports:
-                    child = QtGui.QTreeWidgetItem(None)
+                    child = QtWidgets.QTreeWidgetItem(None)
                     if imp.name:
-                        child.setText(0, imp.name)
+                        child.setText(0, imp.name.decode('cp437'))
                         child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
                         parent.topLevelItem(i).addChild(child)
 
                     if imp.ordinal:
-                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal))
+                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal.decode('cp437')))
                         child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
                         parent.topLevelItem(i).addChild(child)
-        except Exception, e:
-            print e
+        except Exception as e:
+            logger.error(e, exc_info=1)
 
         # populate with sections
         parent = w.ui.treeWidgetSections
@@ -329,19 +329,19 @@ class PE(FileFormat):
         parent.setColumnWidth(4, 80)        
 
         for section in self.PE.sections:
-            child  = QtGui.QTreeWidgetItem(None)
-            child.setText(0, section.Name)
+            child  = QtWidgets.QTreeWidgetItem(None)
+            child.setText(0, section.Name.decode('cp437'))
             child.setText(1, '{0:X}'.format(section.PointerToRawData))
             child.setText(2, '{0:X}'.format(section.SizeOfRawData))
             child.setText(3, '{0:X}'.format(section.VirtualAddress))
             child.setText(4, '{0:X}'.format(section.Misc_VirtualSize))
 
-            child.setTextColor(1, QtGui.QColor('green'))
-            child.setTextColor(2, QtGui.QColor('green'))
+            child.setForeground(1, QtGui.QColor('green'))
+            child.setForeground(2, QtGui.QColor('green'))
 
 
-            child.setTextColor(3, QtGui.QColor(183, 72, 197))
-            child.setTextColor(4, QtGui.QColor(183, 72, 197))
+            child.setForeground(3, QtGui.QColor(183, 72, 197))
+            child.setForeground(4, QtGui.QColor(183, 72, 197))
             
             # build characteristics string for every section
             fr = 'R' if section.IMAGE_SCN_MEM_READ else '-'
@@ -367,14 +367,14 @@ class PE(FileFormat):
         parent.setColumnWidth(0, 150) 
 
         for d in self.PE.OPTIONAL_HEADER.DATA_DIRECTORY:
-            child  = QtGui.QTreeWidgetItem(None)
+            child  = QtWidgets.QTreeWidgetItem(None)
             child.setText(0, d.name.replace('IMAGE_DIRECTORY_ENTRY_', ''))
 
             if d.VirtualAddress != 0 and d.Size != 0:
                 for i, section in enumerate(self.PE.sections):
                     if section.contains_rva(d.VirtualAddress):
-                        child.setText(1, '{0} [{1}]'.format(section.Name.strip('\0'), i))
-                        child.setTextColor(1, QtGui.QColor('red'))
+                        child.setText(1, '{0} [{1}]'.format(section.Name.decode('cp437').strip('\0'), i))
+                        child.setForeground(1, QtGui.QColor('red'))
                         break
                 else:
                     child.setText(1, '{0}'.format('<outside>'))
@@ -382,10 +382,10 @@ class PE(FileFormat):
 
                 child.setText(2, '{0:X}'.format(d.VirtualAddress))
                 child.setText(3, '{0:X}'.format(d.Size))
-                child.setTextColor(2, QtGui.QColor('green'))
-                child.setTextColor(3, QtGui.QColor('green'))
+                child.setForeground(2, QtGui.QColor('green'))
+                child.setForeground(3, QtGui.QColor('green'))
             else:
-                child.setTextColor(0, QtGui.QColor('lightgray'))
+                child.setForeground(0, QtGui.QColor('lightgray'))
 
             parent.addTopLevelItem(child)
 
@@ -401,63 +401,63 @@ class PE(FileFormat):
         bkbrush = QtGui.QBrush(QtGui.QColor(192, 165, 194))
         bkbrush2 = QtGui.QBrush(QtGui.QColor(232, 194, 229))
 
-        child = QtGui.QTreeWidgetItem(None)
+        child = QtWidgets.QTreeWidgetItem(None)
 
         child.setText(0, 'IMAGE_DOS_HEADER')
         child.setBackground(0, bkbrush)
 
-        ch2 = QtGui.QTreeWidgetItem(['magic', 'word', '{0:X}'.format(int(self.PE.DOS_HEADER.e_magic))])
-        ch2.setTextColor(2, QtGui.QColor('green'))
-        ch2.setTextColor(1, QtGui.QColor(183, 72, 197))
+        ch2 = QtWidgets.QTreeWidgetItem(['magic', 'word', '{0:X}'.format(int(self.PE.DOS_HEADER.e_magic))])
+        ch2.setForeground(2, QtGui.QColor('green'))
+        ch2.setForeground(1, QtGui.QColor(183, 72, 197))
         child.addChild(ch2)
 
-        ch2 = QtGui.QTreeWidgetItem(['e_lfanew', 'word', '{0:X}'.format(int(self.PE.DOS_HEADER.e_lfanew))])
-        ch2.setTextColor(2, QtGui.QColor('green'))
-        ch2.setTextColor(1, QtGui.QColor(183, 72, 197))        
+        ch2 = QtWidgets.QTreeWidgetItem(['e_lfanew', 'word', '{0:X}'.format(int(self.PE.DOS_HEADER.e_lfanew))])
+        ch2.setForeground(2, QtGui.QColor('green'))
+        ch2.setForeground(1, QtGui.QColor(183, 72, 197))
         child.addChild(ch2)
 
         parent.addTopLevelItem(child)
 
 
-        item = QtGui.QTreeWidgetItem(['IMAGE_NT_HEADERS'])
+        item = QtWidgets.QTreeWidgetItem(['IMAGE_NT_HEADERS'])
         item.setBackground(0, bkbrush)
 
-        child = QtGui.QTreeWidgetItem(['Signature', 'word',  '{0:X}'.format(int(self.PE.NT_HEADERS.Signature))])
-        child.setTextColor(2, QtGui.QColor('green'))
-        child.setTextColor(1, QtGui.QColor(183, 72, 197))
+        child = QtWidgets.QTreeWidgetItem(['Signature', 'word',  '{0:X}'.format(int(self.PE.NT_HEADERS.Signature))])
+        child.setForeground(2, QtGui.QColor('green'))
+        child.setForeground(1, QtGui.QColor(183, 72, 197))
 
         item.addChild(child)
 
-        subitem = QtGui.QTreeWidgetItem(['IMAGE_FILE_HEADER'])
+        subitem = QtWidgets.QTreeWidgetItem(['IMAGE_FILE_HEADER'])
         subitem.setBackground(0, bkbrush2)
 
-        child = QtGui.QTreeWidgetItem(['Machine', 'word',  '{0:X}'.format(int(self.PE.FILE_HEADER.Machine))])
-        child.setTextColor(2, QtGui.QColor('green'))
-        child.setTextColor(1, QtGui.QColor(183, 72, 197))
+        child = QtWidgets.QTreeWidgetItem(['Machine', 'word',  '{0:X}'.format(int(self.PE.FILE_HEADER.Machine))])
+        child.setForeground(2, QtGui.QColor('green'))
+        child.setForeground(1, QtGui.QColor(183, 72, 197))
 
         subitem.addChild(child)
 
-        child = QtGui.QTreeWidgetItem(['NumberOfSections', 'word',  '{0:X}'.format(int(self.PE.FILE_HEADER.NumberOfSections))])
-        child.setTextColor(2, QtGui.QColor('green'))
-        child.setTextColor(1, QtGui.QColor(183, 72, 197))
+        child = QtWidgets.QTreeWidgetItem(['NumberOfSections', 'word',  '{0:X}'.format(int(self.PE.FILE_HEADER.NumberOfSections))])
+        child.setForeground(2, QtGui.QColor('green'))
+        child.setForeground(1, QtGui.QColor(183, 72, 197))
 
         subitem.addChild(child)
 
-        child = QtGui.QTreeWidgetItem(['TimeDateStamp', 'dword',  '{0:X}'.format(int(self.PE.FILE_HEADER.TimeDateStamp))])
-        child.setTextColor(2, QtGui.QColor('green'))
-        child.setTextColor(1, QtGui.QColor(183, 72, 197))
+        child = QtWidgets.QTreeWidgetItem(['TimeDateStamp', 'dword',  '{0:X}'.format(int(self.PE.FILE_HEADER.TimeDateStamp))])
+        child.setForeground(2, QtGui.QColor('green'))
+        child.setForeground(1, QtGui.QColor(183, 72, 197))
 
         subitem.addChild(child)
 
-        child = QtGui.QTreeWidgetItem(['Characteristics', 'dword',  '{0:X}'.format(int(self.PE.FILE_HEADER.Characteristics))])
-        child.setTextColor(2, QtGui.QColor('green'))
-        child.setTextColor(1, QtGui.QColor(183, 72, 197))
+        child = QtWidgets.QTreeWidgetItem(['Characteristics', 'dword',  '{0:X}'.format(int(self.PE.FILE_HEADER.Characteristics))])
+        child.setForeground(2, QtGui.QColor('green'))
+        child.setForeground(1, QtGui.QColor(183, 72, 197))
 
         subitem.addChild(child)
         item.addChild(subitem)
 
 
-        subitem = QtGui.QTreeWidgetItem(['IMAGE_OPTIONAL_HEADER'])
+        subitem = QtWidgets.QTreeWidgetItem(['IMAGE_OPTIONAL_HEADER'])
         subitem.setBackground(0, bkbrush2)
 
         Data = [['Magic', 'word',  '{0:X}'.format(int(self.PE.OPTIONAL_HEADER.Magic))],
@@ -486,30 +486,30 @@ class PE(FileFormat):
                 ['CheckSum', 'dword',  '{0:X}'.format(int(self.PE.OPTIONAL_HEADER.CheckSum))]]
 
         for it in Data:
-            child = QtGui.QTreeWidgetItem(it)
+            child = QtWidgets.QTreeWidgetItem(it)
 
-            child.setTextColor(2, QtGui.QColor('green'))
-            child.setTextColor(1, QtGui.QColor(183, 72, 197))
+            child.setForeground(2, QtGui.QColor('green'))
+            child.setForeground(1, QtGui.QColor(183, 72, 197))
 
             subitem.addChild(child)
 
 
-        child = QtGui.QTreeWidgetItem(['IMAGE_DATA_DIRECTORY [16]'])
+        child = QtWidgets.QTreeWidgetItem(['IMAGE_DATA_DIRECTORY [16]'])
         child.setBackground(0, bkbrush2)
 
         for i, d in enumerate(self.PE.OPTIONAL_HEADER.DATA_DIRECTORY):
-            subchild = QtGui.QTreeWidgetItem(['[{0}] {1}'.format(i, d.name.replace('IMAGE_DIRECTORY_ENTRY_', ''))])
+            subchild = QtWidgets.QTreeWidgetItem(['[{0}] {1}'.format(i, d.name.replace('IMAGE_DIRECTORY_ENTRY_', ''))])
             if d.VirtualAddress == 0 and d.Size == 0:
-                subchild.setTextColor(0, QtGui.QColor('lightgray'))
+                subchild.setForeground(0, QtGui.QColor('lightgray'))
 
-            c = QtGui.QTreeWidgetItem(['VirtualAddress', 'dword', '{0:X}'.format(int(d.VirtualAddress))])
-            c.setTextColor(2, QtGui.QColor('green'))
-            c.setTextColor(1, QtGui.QColor(183, 72, 197))
+            c = QtWidgets.QTreeWidgetItem(['VirtualAddress', 'dword', '{0:X}'.format(int(d.VirtualAddress))])
+            c.setForeground(2, QtGui.QColor('green'))
+            c.setForeground(1, QtGui.QColor(183, 72, 197))
             subchild.addChild(c)
 
-            c = QtGui.QTreeWidgetItem(['Size', 'dword', '{0:X}'.format(int(d.Size))])
-            c.setTextColor(2, QtGui.QColor('green'))
-            c.setTextColor(1, QtGui.QColor(183, 72, 197))
+            c = QtWidgets.QTreeWidgetItem(['Size', 'dword', '{0:X}'.format(int(d.Size))])
+            c.setForeground(2, QtGui.QColor('green'))
+            c.setForeground(1, QtGui.QColor(183, 72, 197))
             subchild.addChild(c)
 
             child.addChild(subchild)
@@ -523,14 +523,14 @@ class PE(FileFormat):
         parent.addTopLevelItem(item) # NT_HEADERS
 
 
-        _item =  QtGui.QTreeWidgetItem(['{0}'.format('IMAGE_SECTION_HEADERS []')])
+        _item =  QtWidgets.QTreeWidgetItem(['{0}'.format('IMAGE_SECTION_HEADERS []')])
         parent.addTopLevelItem(_item)
 
         for i, section in enumerate(self.PE.sections):
-            item =  QtGui.QTreeWidgetItem(['{0} [{1}]'.format('SECTION_HEADER', i)])
+            item =  QtWidgets.QTreeWidgetItem(['{0} [{1}]'.format('SECTION_HEADER', i)])
             item.setBackground(0, bkbrush)
 
-            Data = [['Name', 'char[8]',  section.Name],
+            Data = [['Name', 'char[8]',  section.Name.decode('cp437')],
                     ['VirtualSize', 'dword',  '{0:X}'.format(int(section.Misc_VirtualSize))],
                     ['VirtualAddress', 'dword',  '{0:X}'.format(int(section.VirtualAddress))],
                     ['SizeOfRawData', 'dword',  '{0:X}'.format(int(section.SizeOfRawData))],
@@ -539,9 +539,9 @@ class PE(FileFormat):
             ]
 
             for data in Data:
-                child = QtGui.QTreeWidgetItem(data)
-                child.setTextColor(2, QtGui.QColor('green'))
-                child.setTextColor(1, QtGui.QColor(183, 72, 197))
+                child = QtWidgets.QTreeWidgetItem(data)
+                child.setForeground(2, QtGui.QColor('green'))
+                child.setForeground(1, QtGui.QColor(183, 72, 197))
 
                 item.addChild(child)
 
@@ -561,7 +561,7 @@ class PE(FileFormat):
         # add sections
 
         for section in self.PE.sections:
-            child  = QtGui.QTreeWidgetItem(None)            
+            child  = QtWidgets.QTreeWidgetItem(None)            
             child.setText(0, section.Name)            
             parent.topLevelItem(3).addChild(child)
         """
@@ -717,7 +717,7 @@ class PE(FileFormat):
 
         import string
 
-        x = string.find(self.dataModel.getData(), '\x00'*8, off)
+        x = self.dataModel.getData().find(b'\x00'*8, off)
         if x == -1:
             x = off
 
@@ -844,25 +844,25 @@ class PE(FileFormat):
         self.w = WHeaders(parent, self)
         self._parent = parent
 
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.doit, self.doit)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+V"), parent, self.shortVersionInfo, self.shortVersionInfo)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.shortHeader, self.shortHeader)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+I"), parent, self.shortImports, self.shortImports)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.shortExports, self.shortExports)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+S"), parent, self.shortSections, self.shortSections)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+D"), parent, self.shortDirectories, self.shortDirectories)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("0"), parent, self.jump_overlay, self.jump_overlay)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.doit, self.doit)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+V"), parent, self.shortVersionInfo, self.shortVersionInfo)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+H"), parent, self.shortHeader, self.shortHeader)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+I"), parent, self.shortImports, self.shortImports)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+E"), parent, self.shortExports, self.shortExports)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+S"), parent, self.shortSections, self.shortSections)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+D"), parent, self.shortDirectories, self.shortDirectories)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("F7"), parent, self.F7, self.F7)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("F3"), parent, self.F3, self.F3)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("["), parent, self.skip_section_dw, self.skip_section_dw)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("]"), parent, self.skip_section_up, self.skip_section_up)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("0"), parent, self.jump_overlay, self.jump_overlay)]
 
         self.writeData(self.w)
 
         self.dgoto = PEDialogGoto(parent, self)
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showGoto, self._showGoto)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showGoto, self._showGoto)]
 
 
 # GoTo dialog (inheritance from FileFormat DialogGoto)
@@ -919,7 +919,7 @@ class PEDialogGoto(DialogGoto):
         self.PE = self.plugin.PE
         try:
             result = self.PE.get_offset_from_rva(rva)
-        except Exception, e:
+        except Exception as e:
             return None
 
         return result
@@ -928,7 +928,7 @@ class PEDialogGoto(DialogGoto):
         self.PE = self.plugin.PE
         try:
             result = self.PE.get_offset_from_rva(va - self.PE.OPTIONAL_HEADER.ImageBase)
-        except Exception, e:
+        except Exception as e:
             return None
 
         return result
@@ -1095,7 +1095,7 @@ class DirectoriesEventFilter(QtCore.QObject):
         return False
 
 
-class WHeaders(QtGui.QDialog):
+class WHeaders(QtWidgets.QDialog):
     
     def __init__(self, parent, plugin):
         super(WHeaders, self).__init__(parent)
@@ -1105,7 +1105,7 @@ class WHeaders(QtGui.QDialog):
         self.oshow = super(WHeaders, self).show
 
         root = os.path.dirname(sys.argv[0])
-        self.ui = PyQt4.uic.loadUi(os.path.join(root, 'plugins', 'format','pe.ui'), baseinstance=self)
+        self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'format','pe.ui'), baseinstance=self)
 
         self.ei = ImportsEventFilter(plugin, self.ui.treeWidgetImports)
         self.ui.treeWidgetImports.installEventFilter(self.ei)
@@ -1141,9 +1141,9 @@ class WHeaders(QtGui.QDialog):
     def initUI(self):      
 
         self.setWindowTitle('PE plugin')
-        self.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
-        shortcut = QtGui.QShortcut(QtGui.QKeySequence("Alt+F"), self, self.close, self.close)
+        shortcut = QtWidgets.QShortcut(QtGui.QKeySequence("Alt+F"), self, self.close, self.close)
 
     """
     def eventFilter(self, watched, event):
@@ -1188,7 +1188,7 @@ class PEBottomBanner(Banners.BottomBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         dword = self.dataModel.getDWORD(self.viewMode.getCursorAbsolutePosition(), asString=True)
         if dword is None:
@@ -1383,7 +1383,7 @@ class PEBanner(Banners.Banner):
 
             section = self.PE.get_section_by_offset(offset)
             if section:
-                s = section.Name.replace('\0', ' ')
+                s = section.Name.replace(b'\0', b' ').decode('cp437')
 
             displayType = self.peplugin.getAddressMode()
             if displayType == 'FA':

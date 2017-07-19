@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 class Cursor(object):
     def __init__(self, x, y):
@@ -69,12 +69,15 @@ class ConsoleEmulator():
    #     return
 
         background = self.qp.backgroundMode()
+        if type(s) == bytes:
+            s = s.decode('cp437')
         for c in s:
             if self._validatePosition(self._x, self._y):
                 if noBackgroudOnSpaces and c == ' ':
                     self.qp.setBackgroundMode(0)
 
-                self.qp.drawText(self._x * self.fontWidth, self.fontHeight + self._y * self.fontHeight, c)
+
+                self.qp.drawText(int(self._x * self.fontWidth), int(self.fontHeight + self._y * self.fontHeight), c)
                 self.incrementPosition()        
         self.qp.setBackgroundMode(background)
 

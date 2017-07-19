@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 class Observable(object):
     def __init__(self):
@@ -59,7 +59,7 @@ class ViewMode(Observable, object):
         0x00b0, 0x2219, 0x00b7, 0x221a, 0x207f, 0x00b2, 0x25a0, 0x00a0]
 
     def cp437(self, c):
-        return unichr(self.cp437ToUnicode[c])
+        return chr(self.cp437ToUnicode[c])
 
     def getPageOffset(self):
         NotImplementedError('method not implemented.')

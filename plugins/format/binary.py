@@ -2,8 +2,8 @@ from FileFormat import *
 import Banners
 import pefile
 from TextDecorators import *
-from PyQt4 import QtGui, QtCore
-import PyQt4
+from PyQt5 import QtGui, QtCore, QtWidgets
+import PyQt5
 from cemu import *
 
 import sys, os
@@ -51,9 +51,9 @@ class Binary(FileFormat):
     def registerShortcuts(self, parent):
         self._parent = parent
         self.w = DialogGoto(parent, self)
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
-        self._Shortcuts += [QtGui.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+G"), parent, self._showit, self._showit)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("s"), parent, self.skip_chars, self.skip_chars)]
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("e"), parent, self.skip_block, self.skip_block)]
 
     def _showit(self):
         if not self.w.isVisible():
