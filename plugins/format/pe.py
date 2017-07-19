@@ -313,7 +313,7 @@ class PE(FileFormat):
                         parent.topLevelItem(i).addChild(child)
 
                     if imp.ordinal:
-                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal.decode('cp437')))
+                        child.setText(0, 'ordinal:{0}'.format(imp.ordinal))
                         child.setText(1, '0x{0:X}'.format(imp.address-self.PE.OPTIONAL_HEADER.ImageBase))
 
                         parent.topLevelItem(i).addChild(child)
@@ -763,8 +763,9 @@ class PE(FileFormat):
         """
 
     def jump_overlay(self):
-        overlay = self.PE.get_overlay_data_start_offset()
-        self._viewMode.goTo(overlay)
+        if self.PE.get_overlay_data_start_offset() is not None:
+            overlay = self.PE.get_overlay_data_start_offset()
+            self._viewMode.goTo(overlay)
 
     def skip_section_up(self):
         # cursor pozition in datamodel
@@ -946,7 +947,7 @@ class ImportsEventFilter(QtCore.QObject):
 
                 # get RVA column from treeView
                 item = self.widget.currentItem()
-                rva = self.widget.indexFromItem(item, 1).data().toString()
+                rva = self.widget.indexFromItem(item, 1).data()
                 if rva:
                     # strip 0x
                     rva = int(str(rva[2:]), 16)
@@ -969,7 +970,7 @@ class ExportsEventFilter(QtCore.QObject):
 
                 # get RVA column from treeView
                 item = self.widget.currentItem()
-                rva = self.widget.indexFromItem(item, 1).data().toString()
+                rva = self.widget.indexFromItem(item, 1).data()
                 if rva:
                     rva = str(rva)
                     # strip 0x
@@ -994,17 +995,17 @@ class SectionsEventFilter(QtCore.QObject):
 
                 # get file-address column from treeView
                 item = self.widget.currentItem()
-                offset = self.widget.indexFromItem(item, 1).data().toString()
+                offset = self.widget.indexFromItem(item, 1).data()
                 offset = int(str(offset), 16)
 
                 self.plugin._viewMode.goTo(offset)
 
             if event.key() == QtCore.Qt.Key_F9:
                 item = self.widget.currentItem()
-                offset = self.widget.indexFromItem(item, 1).data().toString()
+                offset = self.widget.indexFromItem(item, 1).data()
                 offset = int(str(offset), 16)
 
-                size = self.widget.indexFromItem(item, 2).data().toString()
+                size = self.widget.indexFromItem(item, 2).data()
                 size = int(str(size), 16)
 
                 self.plugin._viewMode.selector.addSelection((offset, offset+size), type=TextSelection.SelectionType.NORMAL)
@@ -1022,7 +1023,7 @@ class HeaderEventFilter(QtCore.QObject):
     def eventFilter(self, watched, event):
         if event.type() == QtCore.QEvent.KeyPress:
             item = self.widget.currentItem()
-            txt = self.widget.indexFromItem(item, 0).data().toString()
+            txt = self.widget.indexFromItem(item, 0).data()
 
             if event.key() == QtCore.Qt.Key_Return:
 
@@ -1069,7 +1070,7 @@ class DirectoriesEventFilter(QtCore.QObject):
 
                 # get file-address column from treeView
                 item = self.widget.currentItem()
-                offset = self.widget.indexFromItem(item, 2).data().toString()
+                offset = self.widget.indexFromItem(item, 2).data()
                 if offset:
                     offset = int(str(offset), 16)
                     offset = self.plugin.PE.get_offset_from_rva(offset)
@@ -1079,8 +1080,8 @@ class DirectoriesEventFilter(QtCore.QObject):
 
             if event.key() == QtCore.Qt.Key_F9:
                 item = self.widget.currentItem()
-                offset = self.widget.indexFromItem(item, 2).data().toString()
-                size = self.widget.indexFromItem(item, 3).data().toString()
+                offset = self.widget.indexFromItem(item, 2).data()
+                size = self.widget.indexFromItem(item, 3).data()
 
                 if offset and size:
 
@@ -1262,7 +1263,7 @@ class PEBottomBanner(Banners.BottomBanner):
 
         start = self.plugin.PE.get_overlay_data_start_offset()
 
-        if start > 0:
+        if start != None and start > 0:
             qp.setPen(self.gray)
             overlay = 'overlay: {0:,} bytes'.format(start)
 
@@ -1270,7 +1271,7 @@ class PEBottomBanner(Banners.BottomBanner):
                 off = 73 + 3 + len(sel)
 
             cemu.writeAt(off, 0, 'overlay: {0:,} bytes'.format(self.dataModel.size() - start))
-            cemu.writeAt(off, 1, '         {0}%'.format((self.dataModel.size() - start)*100/self.dataModel.size()))
+            cemu.writeAt(off, 1, '         {0}%'.format((self.dataModel.size() - start)*100//self.dataModel.size()))
         
         qp.end()
 
@@ -1288,7 +1289,7 @@ class PEHeaderBanner(Banners.TopBanner):
         qp.setPen(self.textPen)
         qp.setFont(self.font)
 
-        cemu = ConsoleEmulator(qp, self.height/self.fontHeight, self.width/self.fontWidth)
+        cemu = ConsoleEmulator(qp, self.height//self.fontHeight, self.width//self.fontWidth)
 
         cemu.writeAt(1, 0, 'Name')
 
