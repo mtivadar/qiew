@@ -92,8 +92,6 @@ class ARM64_Lexer(ASMLexer):
         t.type = t.value[0]
         t.value = t.value[0]
         t.lexer.skip(1)
-        #print t.value
-        #print 'LEXER ERROR'
         return t
 
 
@@ -120,8 +118,6 @@ class X86_Lexer(ASMLexer):
         t.type = t.value[0]
         t.value = t.value[0]
         t.lexer.skip(1)
-        #print t.value
-        #print 'LEXER ERROR'
         return t
 
 
@@ -155,10 +151,8 @@ class ASMLine(object):
         if self._loaded:
             return
 
-        #self._lexer = X86_Lexer().lexer()
         self._lexer = self.Lexer
         self._lexer.input(self._asm.op_str)
-        #self.lexer = []
 
         self.lexer = list(self._lexer)
 
@@ -546,7 +540,7 @@ class DisasmViewMode(ViewMode):
         qp.setBrush(QtGui.QColor(255, 255, 0))
 
         qp.setOpacity(0.5)
-        qp.drawRect(xstart*self.fontWidth, cursorY*self.fontHeight, width*self.fontWidth, self.fontHeight + 2)
+        qp.drawRect(xstart*self.fontWidth, cursorY*self.fontHeight + 1, width*self.fontWidth, self.fontHeight + 1)
         qp.setOpacity(1)
 
 
@@ -816,9 +810,6 @@ class DisasmViewMode(ViewMode):
             result = '[' + asm.symbol + ']'
         else:
             self._write_instruction(asm, qp, cemu)
-            #result = asm.operands
-
-        #print result
 
         if len(asm.referencedString) > 4:
             cemu.write(30*' ')
