@@ -555,9 +555,9 @@ class HexViewMode(ViewMode):
                         else:
                             b =  ((b & 0xF0) | (z & 0x0F)) & 0xFF
 
-                        self.dataModel.setData_b(x, chr(b))
+                        self.dataModel.setData_b(x, b)
             else:
-                self.dataModel.setData_b(self.dataModel.getOffset() + offs, chr(b))
+                self.dataModel.setData_b(self.dataModel.getOffset() + offs, b)
 
             if block:
                 self.transformationEngine = RangePen(self.original_textdecorator, u, v, QtGui.QPen(QtGui.QColor(218, 94, 242), 0, QtCore.Qt.SolidLine), ignoreHighlights=True)

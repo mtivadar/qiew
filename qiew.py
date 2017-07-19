@@ -790,14 +790,14 @@ class Qiew(QtWidgets.QWidget):
             return
 
         quit_msg = "Do you want to save the changes?"
-        reply = QtWidgets.QTreeWidgetItem.question(self, 'Qiew',
-                         quit_msg, QtWidgets.QTreeWidgetItem.Yes, QtWidgets.QTreeWidgetItem.No, QtWidgets.QTreeWidgetItem.Cancel)
+        reply = QtWidgets.QMessageBox.question(self, 'Qiew',
+                         quit_msg, QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No | QtWidgets.QMessageBox.Cancel)
 
-        if reply == QtWidgets.QTreeWidgetItem.Yes:
+        if reply == QtWidgets.QMessageBox.Yes:
             if self.wid.save() == False:
                 print('File not saved!')
             event.accept()
-        elif reply == QtWidgets.QTreeWidgetItem.No:
+        elif reply == QtWidgets.QMessageBox.No:
             event.accept()
         else:
             event.ignore()

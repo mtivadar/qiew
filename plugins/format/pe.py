@@ -763,8 +763,8 @@ class PE(FileFormat):
         """
 
     def jump_overlay(self):
-        if self.PE.get_overlay_data_start_offset() is not None:
-            overlay = self.PE.get_overlay_data_start_offset()
+        overlay = self.PE.get_overlay_data_start_offset()
+        if overlay:
             self._viewMode.goTo(overlay)
 
     def skip_section_up(self):
@@ -1263,7 +1263,7 @@ class PEBottomBanner(Banners.BottomBanner):
 
         start = self.plugin.PE.get_overlay_data_start_offset()
 
-        if start != None and start > 0:
+        if start:
             qp.setPen(self.gray)
             overlay = 'overlay: {0:,} bytes'.format(start)
 

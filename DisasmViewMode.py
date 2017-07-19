@@ -990,6 +990,9 @@ class DisasmViewMode(ViewMode):
                 #print iterable
                 if len(iterable) > 0:
                     d = iterable[-1]
+                else:
+                    #todo: what should we handle here
+                    break
 
             newasm = d
 
