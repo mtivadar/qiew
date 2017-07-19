@@ -30,7 +30,7 @@ class basic(UnpackPlugin.DecryptPlugin):
         else:
             key = 0
 
-        keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
+        keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)//8
         self.ui.bytes.setText(str(keysize))
 
     def _rol(self, b, key, size):
@@ -125,7 +125,7 @@ class basic(UnpackPlugin.DecryptPlugin):
                 b = OP[op](b, key, size)
 
                 # compute key size in bytes
-                keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
+                keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)//8
                 key = OP[keyop](key, delta, keysize)
 
                 j = 0

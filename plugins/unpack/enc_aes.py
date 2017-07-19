@@ -67,7 +67,7 @@ class aes(UnpackPlugin.DecryptPlugin):
         if op == 'Hex':
             key = UnpackPlugin._convert(key)
 
-            keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
+            keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)//8
             i = 0
 
             out = ''
@@ -110,7 +110,7 @@ class aes(UnpackPlugin.DecryptPlugin):
             plaintext =  self.dataModel.getStream(u, v)
 
             # damn!
-            blocks = len(plaintext)/16
+            blocks = len(plaintext)//16
             k = 0
             for i in range(blocks):
                 block = [chr(c) for c in plaintext[k:k+16]]

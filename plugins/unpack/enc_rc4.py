@@ -61,7 +61,7 @@ class rc4(UnpackPlugin.DecryptPlugin):
     	if op == 'Hex':
     		key = UnpackPlugin._convert(key)
 
-    		keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)/8
+    		keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)//8
     		i = 0
 
     		out = ''
