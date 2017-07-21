@@ -210,9 +210,10 @@ class FileDataModel(DataModel):
         # open for writing
         try:
             self._f = open(self._filename, "r+b")
-        except Exception as e:
+        except PermissionError:
             # could not open for writing
             return False
+
         self._f.write(self._mapped)
 
         return True
