@@ -14,7 +14,7 @@ class EncoderBase64(UnpackPlugin.DecryptPlugin):
         root = os.path.dirname(sys.argv[0])
         self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'encoder_base64.ui'))
 
-        self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
+        self.ui.op.activated[str].connect(self._itemchanged)
         return True
 
     def getUI(self):
