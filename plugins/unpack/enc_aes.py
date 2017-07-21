@@ -16,11 +16,11 @@ class aes(UnpackPlugin.DecryptPlugin):
         root = os.path.dirname(sys.argv[0])
         self.ui = PyQt5.uic.loadUi(os.path.join(root, 'plugins', 'unpack', 'aes.ui'))
 
-        self.ui.op.activated[QtCore.QString].connect(self._itemchanged)
-        self.ui.op_iv.activated[QtCore.QString].connect(self._itemchanged_iv)
+        self.ui.op.activated[str].connect(self._itemchanged)
+        self.ui.op_iv.activated[str].connect(self._itemchanged_iv)
 
-        self.ui.key.textChanged[QtCore.QString].connect(self._textchanged_key)
-        self.ui.iv.textChanged[QtCore.QString].connect(self._textchanged_iv)
+        self.ui.key.textChanged[str].connect(self._textchanged_key)
+        self.ui.iv.textChanged[str].connect(self._textchanged_iv)
         return True
 
     def _textchanged_key(self, text):
@@ -48,16 +48,16 @@ class aes(UnpackPlugin.DecryptPlugin):
 
     def _itemchanged(self, text):
         self.ui.label_key.setStyleSheet("QLabel {color : red; }")
-    	text = str(text)
+        text = str(text)
 
-    	if text == 'Hex':
-    		# hex validator
-    		self.ui.key.setText('')
-    		self.ui.key.setValidator(UnpackPlugin.MyValidator(self.ui.key))
-    	else:
-    		# no validator for string
-    		self.ui.key.setText('')
-    		self.ui.key.setValidator(None)
+        if text == 'Hex':
+            # hex validator
+    	    self.ui.key.setText('')
+    	    self.ui.key.setValidator(UnpackPlugin.MyValidator(self.ui.key))
+        else:
+    	    # no validator for string
+    	    self.ui.key.setText('')
+    	    self.ui.key.setValidator(None)
 
     def _getvalue(self, op, key):
 
@@ -106,7 +106,7 @@ class aes(UnpackPlugin.DecryptPlugin):
             u, v = self.viewMode.selector.getCurrentSelection()
 
             #aes = pyaes.AESModeOfOperationCFB(key, iv = iv, segment_size = 1)
-            aes = pyaes.AESModeOfOperationCBC(key, iv = iv)
+            aes = pyaes.AESModeOfOperationCBC(bytearray(key), bytearray(iv))
             plaintext =  self.dataModel.getStream(u, v)
 
             # damn!
