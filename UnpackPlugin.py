@@ -88,4 +88,4 @@ class MyValidator(QValidator):
         if state == QValidator.Acceptable:
             self.parent().setStyleSheet('QLineEdit {{ background-color: {} }}'.format(color))
 
-        return (state, k + 1)
+        return (state, c, k + 1)
