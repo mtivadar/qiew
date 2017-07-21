@@ -38,7 +38,7 @@ class rc4(UnpackPlugin.DecryptPlugin):
         x = 0
         box = list(range(256))
         for i in range(256):
-            x = (x + box[i] + ord(key[i % len(key)])) % 256
+            x = (x + box[i] + key[i % len(key)]) % 256
             box[i], box[x] = box[x], box[i]
         x = 0
         y = 0
@@ -62,22 +62,10 @@ class rc4(UnpackPlugin.DecryptPlugin):
 
         if op == 'Hex':
             key = UnpackPlugin._convert(key)
-
-            keysize = (key.bit_length() + (8 - key.bit_length()%8)%8)//8
-            i = 0
-
-            out = ''
-            if keysize == 0:
-                out += '\x00'
-
-            # ugly, but it's ok, string is small
-            while i < keysize:
-                out += chr(key & 0xFF)
-                key = key >> 8
-                i += 1
-
-            key = out
-
+            key = key.to_bytes((key.bit_length() + 7) // 8, byteorder='little')
+            print(key)
+        else:
+            key = bytearray(key, 'utf-8')
 
         if self.viewMode.selector.getCurrentSelection():
             u, v = self.viewMode.selector.getCurrentSelection()
