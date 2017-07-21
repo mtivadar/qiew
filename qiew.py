@@ -390,6 +390,8 @@ class binWidget(QtWidgets.QWidget, Observable):
                 
             if event.modifiers() & QtCore.Qt.ShiftModifier:
                 if key == QtCore.Qt.Key_Insert:
+                    raise Exception("Not implemented")
+                    """
                     import re
                     hx = pyperclip.paste()
                     #print hx
@@ -406,6 +408,7 @@ class binWidget(QtWidgets.QWidget, Observable):
                     self.viewMode.draw(True)
                     del pyperclip
                     #print array
+                    """
 
                 if key == QtCore.Qt.Key_F4:
                     self.unp = WUnpack(self, None)
