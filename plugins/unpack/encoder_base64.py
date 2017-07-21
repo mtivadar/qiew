@@ -4,6 +4,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import PyQt5
 import sys, os
 
+import binascii
 import base64
 
 class EncoderBase64(UnpackPlugin.DecryptPlugin):
@@ -37,19 +38,22 @@ class EncoderBase64(UnpackPlugin.DecryptPlugin):
             if op == 'decode':
                 try:
                     encoded = base64.b64decode(stream)
-                except TypeError:
+                except (TypeError, binascii.Error):
                     reply = QtWidgets.QMessageBox.warning(self.viewMode.widget, 'Qiew', "Error decoding...", QtWidgets.QMessageBox.Ok)
                     return False
 
             elif op == 'encode':
                 try:
                     encoded = base64.b64encode(stream)
-                except TypeError:
+                except (TypeError, binascii.Error):
                     reply = QtWidgets.QMessageBox.warning(self.viewMode.widget, 'Qiew', "Error encoding...", QtWidgets.QMessageBox.Ok)
                     return False
 
-            name = self.dataModel.source
-            open(name + '.base64', 'w').write(encoded)
-            reply = QtWidgets.QMessageBox.information(self.viewMode.widget, 'Qiew', "Done.", QtWidgets.QMessageBox.Ok)
+            name = self.dataModel.source + '.base64'
+
+            # todo: handle exceptions
+            open(name, 'wb').write(bytearray(encoded))
+
+            reply = QtWidgets.QMessageBox.information(self.viewMode.widget, 'Qiew', "Done:\n{}".format(name), QtWidgets.QMessageBox.Ok)
 
         return True
