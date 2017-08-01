@@ -32,7 +32,12 @@ class PE(FileFormat):
 
 
     def getVA(self, offset):
-        return self.PE.get_rva_from_offset(offset) + self.PE.OPTIONAL_HEADER.ImageBase
+        ofs = self.PE.get_rva_from_offset(offset)
+
+        if ofs is None:
+            return None
+
+        return ofs + self.PE.OPTIONAL_HEADER.ImageBase
 
     def changeAddressMode(self):
         self.DisplayTypes = self.DisplayTypes[1:] + [self.DisplayTypes[0]]
