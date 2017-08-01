@@ -193,7 +193,7 @@ class PE(FileFormat):
                         name = imp.name
 
                     if imp.ordinal:
-                        name = imp.ordinal
+                        name = bytes(imp.ordinal)
 
                     return '{0}:{1}'.format(entry.dll.decode('cp437'), name.decode('cp437'))
 
