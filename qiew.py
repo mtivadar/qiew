@@ -5,8 +5,11 @@
 author: Marius TIVADAR
 date: 02/2013
 """
-
 import sys
+if sys.version_info < (3, 0):
+    sys.stdout.write("Sorry, requires Python 3.x to run.\n")
+    sys.exit(1)
+
 from io import *
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 import mmap
