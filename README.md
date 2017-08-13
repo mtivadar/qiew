@@ -49,6 +49,6 @@ If you develop in a virtualenv on Windows, you need to copy the python3.dll to y
 ![disasmview](https://github.com/mtivadar/qiew/blob/master/wiki/disasmview.png)
 ![disasmview](https://github.com/mtivadar/qiew/blob/master/wiki/disasmview2.png)
 
-Powered by: Python3, Qt5 [Terminus font](http://terminus-font.sourceforge.net/), [pefile](https://github.com/erocarrera/pefil), [Capstone](http://www.capstone-engine.org/index.html)
+Powered by: Python3, [Qt5](http://doc.qt.io/qt-5/qt5-intro.html), [Terminus font](http://terminus-font.sourceforge.net/), [pefile](https://github.com/erocarrera/pefil), [Capstone](http://www.capstone-engine.org/index.html)
 
 [see wiki](https://github.com/mtivadar/qiew/wiki)
