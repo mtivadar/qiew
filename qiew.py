@@ -766,8 +766,7 @@ class SearchWindow(QtWidgets.QDialog):
         else:
             self._lastText = text
 
-        if self.ui.checkHex.isChecked() == False:
-            text = text.encode('utf-8')
+        text = text.encode('utf-8')
 
         idx = self.searchable.search(text)
         if idx == -1:
