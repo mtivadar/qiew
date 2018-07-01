@@ -96,9 +96,7 @@ class ELF(FileFormat):
         if x >= sizeOfData:
             return
 
-        import string
-
-        x = string.find(self.dataModel.getData(), '\x00'*8, off)
+        x = self.dataModel.getData().find(b'\x00'*8, off)
         if x == -1:
             x = off
 
