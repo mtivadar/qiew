@@ -720,8 +720,6 @@ class PE(FileFormat):
         if x >= sizeOfData:
             return
 
-        import string
-
         x = self.dataModel.getData().find(b'\x00'*8, off)
         if x == -1:
             x = off
