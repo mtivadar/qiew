@@ -629,10 +629,10 @@ class WHeaders(QtWidgets.QDialog):
             for i in range(l//20 + 1):
                 L.insert((i+0)*20 + i, '\n')
             
-            open(name + '.drop' + '.hex', 'wb').write(' '.join(L))
+            open(name + '.drop' + '.hex', 'w').write(' '.join(L))
 
         if self.ui.rpe.isChecked() == True:
-            text = 'MZ'
+            text = b'MZ'
 
             M = []
             idx = 0
@@ -658,7 +658,7 @@ class WHeaders(QtWidgets.QDialog):
             for mz in M:
                 # try to make an PE instance
                 try:
-                    pe = pefile.PE(data=str(dataModel.getStream(mz, size)))
+                    pe = pefile.PE(data=dataModel.getStream(mz, size))
                 except pefile.PEFormatError as e:
                     continue
 
