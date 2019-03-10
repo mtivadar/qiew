@@ -9,6 +9,9 @@ from cemu import *
 import sys, os
 import DisasmViewMode
 
+import fs_ntfs.fs_ntfs
+from fs_ntfs.fs_ntfs import ntfs
+
 class FsNtfs(FileFormat):
     name = 'fs_ntfs'
     priority = 5
@@ -94,6 +97,9 @@ class FsNtfs(FileFormat):
         # $BOOT
         self._viewMode.selector.addSelection((0x0B, 0x48 + 8, QtGui.QBrush(QtGui.QColor(125, 175, 150)), 0.4), type=TextSelection.SelectionType.PERMANENT)
 
+        
+        self.ntfs = fs_ntfs.fs_ntfs.ntfs.NTFS(self.dataModel)
+
     def hintDisasm(self):
         return DisasmViewMode.Disasm_x86_16bit
 
@@ -116,9 +122,25 @@ class FsNtfs(FileFormat):
         # goto $MFT
         self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+M"), parent, self._goto_mft, self._goto_mft)]
 
+        # goto root (.)
+        self._Shortcuts += [QtWidgets.QShortcut(QtGui.QKeySequence("Alt+R"), parent, self._goto_root, self._goto_root)]
+
+
+    def _goto_root(self):
+        fobj = self.ntfs.mft.get_file_record(5)
+
+        if fobj:
+            self._viewMode.selector.addSelection((fobj.offset, fobj.offset + fobj.size, QtGui.QBrush(QtGui.QColor(125, 175, 150)), 0.4), type=TextSelection.SelectionType.IF_CURSOR_IN_RANGE)
+            self._viewMode.goTo(fobj.offset)
 
     def _goto_mft(self):
-        self._viewMode.goTo(self.lcn_of_mft * self.sectors_per_cluster * self.bytes_per_sector)
+        fobj = self.ntfs.mft.get_file_record(0)
+
+        if fobj:
+            self._viewMode.selector.addSelection((fobj.offset, fobj.offset + fobj.size, QtGui.QBrush(QtGui.QColor(125, 175, 150)), 0.4), type=TextSelection.SelectionType.IF_CURSOR_IN_RANGE)
+            self._viewMode.goTo(fobj.offset)
+
+
 
 
     def _showit(self):
