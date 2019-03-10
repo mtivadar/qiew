@@ -8,6 +8,7 @@ from cemu import *
 
 import sys, os
 import DisasmViewMode
+import elftools
 from elftools.elf.elffile import ELFFile
 
 
