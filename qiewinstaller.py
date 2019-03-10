@@ -30,7 +30,7 @@ bin = '--add-data={};{}'.format(r'C:\Python36\Lib\site-packages\capstone\capston
 buildcmd += [bin]
 
 # modules
-bin = '--hidden-import={}'.format('pyelftools')
+bin = '--hidden-import={}'.format('elftools')
 buildcmd += [bin]
 
 # scripts
