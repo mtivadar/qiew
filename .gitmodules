@@ -1,0 +1,3 @@
+[submodule "fs_ntfs"]
+	path = fs_ntfs
+	url = https://github.com/mtivadar/fs_ntfs
