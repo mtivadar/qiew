@@ -7,7 +7,6 @@ buildcmd = [
     '--name=%s' % qiew,
     '--onefile',
     '--console',
-#    '--add-binary=%s' % os.path.join('plugins', '*.*', ),
 ]
 
 def add_datas(buildcmd, path, allowed=['.py', '.ui', '.yapsy-plugin', '.disabled']):
@@ -30,8 +29,8 @@ bin = '--add-data={};{}'.format(r'C:\Python36\Lib\site-packages\capstone\capston
 buildcmd += [bin]
 
 # modules
-bin = '--hidden-import={}'.format('elftools')
-buildcmd += [bin]
+#bin = '--hidden-import={}'.format('elftools')
+#buildcmd += [bin]
 
 # scripts
 L = os.listdir('.')
