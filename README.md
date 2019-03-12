@@ -41,6 +41,8 @@ If you develop in a virtualenv on Windows, you need to copy the python3.dll to y
   
   * **APK**
   
+  * **NTFS**
+  
 ## Binary view mode
 ![binview](https://github.com/mtivadar/qiew/blob/master/wiki/binview.png)
 ## Hex view mode
