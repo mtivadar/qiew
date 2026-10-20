@@ -1,9 +1,8 @@
-yapsy
-pefile
-pyperclip
-pyaes
-capstone
-ply
-pyelftools
-androguard
-PyQt5
+PySide6>=6.5
+numpy>=1.23
+capstone>=5.0
+pefile>=2023.2.7
+pyelftools>=0.29
+# optional
+pyaes>=1.6        # AES decrypt/encrypt plugin
+# androguard>=3.3 # APK manifest details
