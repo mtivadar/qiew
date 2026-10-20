@@ -104,10 +104,12 @@ pyinstaller packaging/qiew.spec      # dist/qiew  (dist/qiew.app on macOS)
 * Disassembly: symbol lookups are O(1) dicts (were linear import scans per call), scrolling
   re-synchronises backwards with `disasm_lite`, ELF uses real segment VA mapping.
 * Saving writes only the modified ranges back. Search for text in UTF-16 works (the old BOM bug is fixed).
-* NTFS no longer needs the `fs_ntfs` submodule.
 
 Powered by: Python 3, [Qt 6 / PySide6](https://doc.qt.io/qtforpython-6/), numpy, [pefile](https://github.com/erocarrera/pefile), [pyelftools](https://github.com/eliben/pyelftools), [Capstone](http://www.capstone-engine.org/)
 
+## Similar tools
+* [GView](https://github.com/gdt050579/GView/) is a comprehensive native-app, cross-platform reverse-engineering tool with many plugins and a console-based UI and it served as an inspiration for Qiew, and both got inspired by old-but-actual tool Hiew.
+  
 ## Screenshots (1.x)
 ![binview](https://github.com/mtivadar/qiew/blob/master/wiki/binview.png)
 ![hexview](https://github.com/mtivadar/qiew/blob/master/wiki/hexview.png)
